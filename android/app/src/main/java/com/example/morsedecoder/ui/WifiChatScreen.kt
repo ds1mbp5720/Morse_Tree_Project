@@ -4,12 +4,14 @@ import android.content.Context
 import android.os.Vibrator
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
@@ -38,6 +40,7 @@ import kotlinx.coroutines.launch
 import com.example.morsedecoder.ui.components.PulsePad
 import com.example.morsedecoder.domain.util.MorseDictionary
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
@@ -45,6 +48,9 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     var currentMorseBuffer by remember { mutableStateOf("") }
     var lastTapTime by remember { mutableStateOf(0L) }
     var isPressingPad by remember { mutableStateOf(false) }
+    
+    var showProsignSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
     
     // 이미 재생된 메시지 ID들을 추적하여 탭 이동 시 중복 재생 방지
     var playedMessageIds by remember { mutableStateOf(messages.map { it.id }.toSet()) }
@@ -181,7 +187,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                     val meaning = MorseDictionary.getMeaning(currentMorseBuffer)
                     Column {
                         Text(
-                            if (currentMorseBuffer.isEmpty()) "Protocol input..." else currentMorseBuffer,
+                            currentMorseBuffer,
                             color = if (currentMorseBuffer.isEmpty()) Color.Gray else Color(0xFF2DD4BF)
                         )
                         if (meaning != null) {
@@ -195,6 +201,11 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 }
             )
             IconButton(
+                onClick = { showProsignSheet = true }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Prosign", tint = Color(0xFF2DD4BF))
+            }
+            IconButton(
                 onClick = {
                     if (inputText.isNotEmpty()) {
                         viewModel.sendMessage(inputText, encodeToMorse(inputText))
@@ -204,6 +215,55 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 }
             ) {
                 Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0xFF2DD4BF))
+            }
+        }
+
+        if (showProsignSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showProsignSheet = false },
+                sheetState = sheetState,
+                containerColor = Color(0xFF1F2937),
+                contentColor = Color.White
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    item {
+                        Text(
+                            "SELECT_PROSIGN",
+                            color = Color(0xFF2DD4BF),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                    }
+                    val prosigns = MorseDictionary.getAllProsigns()
+                    items(prosigns.toList()) { (morse, meaning) ->
+                        ListItem(
+                            headlineContent = {
+                                Text(meaning, color = Color.White, fontSize = 14.sp)
+                            },
+                            supportingContent = {
+                                Text(morse, color = Color.Gray, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+                            },
+                            modifier = Modifier.clickable {
+                                val decoded = MorseDictionary.decodeChar(morse)
+                                inputText += (if (inputText.isNotEmpty() && !inputText.endsWith(" ")) " " else "") + decoded
+                                scope.launch {
+                                    sheetState.hide()
+                                    showProsignSheet = false
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(32.dp))
+                    }
+                }
             }
         }
 

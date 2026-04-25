@@ -71,6 +71,11 @@ object MorseDictionary {
     fun getMeaning(morse: String): String? {
         return prosignMap[morse]
     }
+    
+    /**
+     * 모든 프로사인 맵을 반환합니다.
+     */
+    fun getAllProsigns(): Map<String, String> = prosignMap
 
     /**
      * 전체 모스 부호 문장을 텍스트로 변환합니다.

@@ -115,7 +115,7 @@ fun MorseScreen(context: Context) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        currentSequence.ifEmpty { "READY_FOR_INPUT" },
+                        currentSequence,
                         color = Color(0xFF2DD4BF),
                         fontSize = 16.sp,
                         fontFamily = FontFamily.Monospace,

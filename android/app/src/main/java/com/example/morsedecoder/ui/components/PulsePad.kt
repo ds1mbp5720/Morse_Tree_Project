@@ -48,12 +48,7 @@ fun PulsePad(
                 .background(if (isPressing) Color(0xFF2DD4BF) else Color(0xFF374151), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                if (isPressing) "SIGNAL" else "READY",
-                color = Color.White,
-                fontSize = 15.sp, // Reduced font size
-                fontWeight = FontWeight.Black
-            )
+            // Text removed for cleaner UI
         }
     }
 }
