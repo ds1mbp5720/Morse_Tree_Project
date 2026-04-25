@@ -210,10 +210,45 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Morse Pulse Pad for Wifi Chat
-        Box(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Sequence Display Bar
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .height(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (currentMorseBuffer.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .background(Color(0xFF1F2937), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            currentMorseBuffer,
+                            color = Color(0xFF2DD4BF),
+                            fontSize = 18.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        val meaning = MorseDictionary.getMeaning(currentMorseBuffer)
+                        if (meaning != null) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "(${meaning.substringAfter(":").trim()})",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            }
+
             PulsePad(
                 isPressing = isPressingPad,
                 onPressStart = {
