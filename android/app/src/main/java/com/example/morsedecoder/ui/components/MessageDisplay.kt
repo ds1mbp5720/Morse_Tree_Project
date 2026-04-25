@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun MessageDisplay(
     message: String,
+    morseCode: String = "",
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -42,6 +43,15 @@ fun MessageDisplay(
                 fontWeight = FontWeight.Black,
                 lineHeight = 28.sp
             )
+            if (morseCode.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    morseCode,
+                    color = Color(0xFF2DD4BF).copy(alpha = 0.7f),
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
         }
     }
 }
@@ -49,5 +59,5 @@ fun MessageDisplay(
 @Preview(showBackground = true, backgroundColor = 0xFF0A0A0B)
 @Composable
 fun MessageDisplayPreview() {
-    MessageDisplay(message = "HELLO WORLD")
+    MessageDisplay(message = "HELLO", morseCode = ".... . .-.. .-.. ---")
 }

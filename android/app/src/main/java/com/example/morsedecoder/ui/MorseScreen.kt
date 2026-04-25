@@ -111,7 +111,8 @@ fun MorseScreen(context: Context) {
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            MessageDisplay(message = message)
+            val morseCode = message.uppercase().map { charToMorse[it.toString()] ?: "" }.joinToString(" ")
+            MessageDisplay(message = message, morseCode = morseCode)
 
             // Sequence Bar
             Box(
