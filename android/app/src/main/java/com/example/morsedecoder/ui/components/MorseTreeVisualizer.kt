@@ -28,13 +28,13 @@ fun MorseTreeVisualizer(
         "D" to "-..", "K" to "-.-", "G" to "--.", "O" to "---"
     )
 
-    Canvas(modifier = modifier.fillMaxWidth().height(350.dp)) {
+    Canvas(modifier = modifier.fillMaxWidth().height(280.dp)) {
         val width = size.width
         val height = size.height
         val centerX = width / 2
         val startY = 40f
-        val stepY = 55.dp.toPx()
-        val baseStepX = 100.dp.toPx()
+        val stepY = 48.dp.toPx()
+        val baseStepX = 105.dp.toPx()
 
         val paint = android.graphics.Paint().apply {
             textAlign = android.graphics.Paint.Align.CENTER
@@ -89,7 +89,7 @@ fun MorseTreeVisualizer(
                     y - 25f,
                     paint.apply {
                         color = textColor.hashCode()
-                        textSize = (if (isActive) 17.sp else 13.sp).toPx()
+                        textSize = (if (isActive) 19.sp else 15.sp).toPx()
                     }
                 )
             } else if (char == "START") {
@@ -99,7 +99,7 @@ fun MorseTreeVisualizer(
                     y - 25f,
                     paint.apply {
                         color = textColor.hashCode()
-                        textSize = 12.sp.toPx()
+                        textSize = 14.sp.toPx()
                     }
                 )
             }

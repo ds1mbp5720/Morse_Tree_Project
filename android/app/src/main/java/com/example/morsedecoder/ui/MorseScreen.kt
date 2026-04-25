@@ -26,11 +26,19 @@ import kotlinx.coroutines.delay
 
 import androidx.compose.ui.tooling.preview.Preview
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+
 @Composable
 fun MorseScreen(context: Context) {
     var message by remember { mutableStateOf("") }
     var currentSequence by remember { mutableStateOf("") }
     var isPressing by remember { mutableStateOf(false) }
+    var isPlayingBack by remember { mutableStateOf(false) }
+    
+    val scope = rememberCoroutineScope()
     
     val morseMap = mapOf(
         ".-" to "A", "-..." to "B", "-.-." to "C", "-.." to "D", "." to "E",
@@ -40,8 +48,36 @@ fun MorseScreen(context: Context) {
         "..-" to "U", "...-" to "V", ".--" to "W", "-..-" to "X", "-.--" to "Y", "--.." to "Z"
     )
 
+    // Reverse map for playback
+    val charToMorse = morseMap.entries.associate { (k, v) -> v to k }
+
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     val toneGenerator = remember { MorseToneGenerator() }
+
+    fun playMessage() {
+        if (isPlayingBack || message.isEmpty()) return
+        scope.launch {
+            isPlayingBack = true
+            val unit = 100L
+            for (char in message.uppercase()) {
+                val code = charToMorse[char.toString()]
+                if (code != null) {
+                    for (symbol in code) {
+                        toneGenerator.start()
+                        val duration = if (symbol == '.') unit else unit * 3
+                        vibrator.vibrate(duration)
+                        delay(duration)
+                        toneGenerator.stop()
+                        delay(unit) // Inter-element gap
+                    }
+                    delay(unit * 3) // Inter-letter gap
+                } else if (char == ' ') {
+                    delay(unit * 7) // Word gap (though message usually doesn't have spaces yet in this specific implementation)
+                }
+            }
+            isPlayingBack = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -116,11 +152,29 @@ fun MorseScreen(context: Context) {
         // Actions
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = { message = message.dropLast(1) }) {
+            TextButton(onClick = { if (message.isNotEmpty()) message = message.dropLast(1) }) {
                 Text("BACKSPACE", color = Color.Gray)
             }
+
+            Button(
+                onClick = { playMessage() },
+                enabled = message.isNotEmpty() && !isPlayingBack,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2DD4BF),
+                    contentColor = Color(0xFF0A0A0B),
+                    disabledContainerColor = Color.DarkGray
+                ),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("PLAYBACK", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+
             TextButton(onClick = { message = "" }) {
                 Text("CLEAR_ALL", color = Color(0xFFEF4444))
             }
