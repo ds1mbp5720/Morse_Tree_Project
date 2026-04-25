@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.morsedecoder.audio.MorseToneGenerator
 import com.example.morsedecoder.ui.components.MessageDisplay
+import com.example.morsedecoder.ui.components.MorseTreeVisualizer
 import com.example.morsedecoder.ui.components.PulsePad
 import kotlinx.coroutines.delay
 
@@ -44,12 +45,12 @@ fun MorseScreen(context: Context) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0A0A0B))
-            .padding(24.dp),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // App Bar / Header
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(Modifier.size(8.dp).background(Color(0xFF2DD4BF)).padding(end = 8.dp))
@@ -57,28 +58,32 @@ fun MorseScreen(context: Context) {
             Text(
                 "SIGNAL_PROCESSOR_V2.4",
                 color = Color.White,
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp
             )
         }
 
+        MorseTreeVisualizer(currentPath = currentSequence)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         MessageDisplay(message = message)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Sequence Bar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .height(50.dp)
                 .background(Color(0xFF0F172A), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 currentSequence.ifEmpty { "READY_FOR_INPUT" },
                 color = Color(0xFF2DD4BF),
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold
             )

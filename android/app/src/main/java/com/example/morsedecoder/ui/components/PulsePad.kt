@@ -25,7 +25,7 @@ fun PulsePad(
 
     Box(
         modifier = modifier
-            .size(220.dp)
+            .size(160.dp)
             .background(Color(0xFF1F2937), CircleShape)
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -42,7 +42,7 @@ fun PulsePad(
     ) {
         Box(
             modifier = Modifier
-                .size(160.dp)
+                .size(110.dp)
                 .background(if (isPressing) Color(0xFF2DD4BF) else Color(0xFF374151), CircleShape),
             contentAlignment = Alignment.Center
         ) {
