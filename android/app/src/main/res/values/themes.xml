@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.MorseDecoder" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.MorseDecoder" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">#2DD4BF</item>
         <item name="android:statusBarColor">#0A0A0B</item>
         <item name="android:navigationBarColor">#0F172A</item>
