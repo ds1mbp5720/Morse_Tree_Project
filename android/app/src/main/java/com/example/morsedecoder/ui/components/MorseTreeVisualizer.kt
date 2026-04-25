@@ -28,12 +28,12 @@ fun MorseTreeVisualizer(
         "D" to "-..", "K" to "-.-", "G" to "--.", "O" to "---"
     )
 
-    Canvas(modifier = modifier.fillMaxWidth().height(280.dp)) {
+    Canvas(modifier = modifier.fillMaxWidth().height(330.dp)) {
         val width = size.width
         val height = size.height
         val centerX = width / 2
         val startY = 40f
-        val stepY = 48.dp.toPx()
+        val stepY = 44.dp.toPx()
         val baseStepX = 105.dp.toPx()
 
         val paint = android.graphics.Paint().apply {

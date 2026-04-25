@@ -35,6 +35,7 @@ import com.example.morsedecoder.presentation.ChatViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+import com.example.morsedecoder.ui.components.PulsePad
 import com.example.morsedecoder.domain.util.MorseDictionary
 
 @Composable
@@ -43,7 +44,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     var inputText by remember { mutableStateOf("") }
     var currentMorseBuffer by remember { mutableStateOf("") }
     var lastTapTime by remember { mutableStateOf(0L) }
-    var pressStartTime by remember { mutableStateOf(0L) }
+    var isPressingPad by remember { mutableStateOf(false) }
     
     // 이미 재생된 메시지 ID들을 추적하여 탭 이동 시 중복 재생 방지
     var playedMessageIds by remember { mutableStateOf(messages.map { it.id }.toSet()) }
@@ -196,33 +197,24 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
 
         // Morse Pulse Pad for Wifi Chat
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFF1F2937))
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = { offset ->
-                            pressStartTime = System.currentTimeMillis()
-                            toneGenerator.start()
-                            vibrator.vibrate(50)
-                            tryAwaitRelease()
-                            val duration = System.currentTimeMillis() - pressStartTime
-                            toneGenerator.stop()
-                            
-                            val symbol = if (duration < 200) "." else "-"
-                            currentMorseBuffer += symbol
-                            lastTapTime = System.currentTimeMillis()
-                        }
-                    )
-                },
+            modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("PULSE PAD", color = Color(0xFF2DD4BF).copy(alpha = 0.5f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                Text("Tap to transmit Morse", color = Color.Gray, fontSize = 12.sp)
-            }
+            PulsePad(
+                isPressing = isPressingPad,
+                onPressStart = {
+                    isPressingPad = true
+                    toneGenerator.start()
+                    vibrator.vibrate(50)
+                },
+                onPressEnd = { duration ->
+                    isPressingPad = false
+                    toneGenerator.stop()
+                    val symbol = if (duration < 200) "." else "-"
+                    currentMorseBuffer += symbol
+                    lastTapTime = System.currentTimeMillis()
+                }
+            )
         }
     }
 }
