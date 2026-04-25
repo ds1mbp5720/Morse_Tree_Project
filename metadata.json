@@ -1,0 +1,6 @@
+{
+  "name": "Morse Tree Decoder",
+  "description": "An interactive Morse code decoder based on a dichotomous tree visualization. Practice Morse code by tapping and holding.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
