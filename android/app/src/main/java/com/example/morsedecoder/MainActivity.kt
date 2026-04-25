@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.example.morsedecoder.ui.MorseScreen
 import com.example.morsedecoder.ui.EncoderScreen
 import com.example.morsedecoder.audio.MorseToneGenerator
