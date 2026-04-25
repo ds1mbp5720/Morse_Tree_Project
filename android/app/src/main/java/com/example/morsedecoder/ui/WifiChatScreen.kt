@@ -2,7 +2,9 @@ package com.example.morsedecoder.ui
 
 import android.content.Context
 import android.os.Vibrator
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,8 +17,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.clip.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -35,7 +39,22 @@ import kotlinx.coroutines.launch
 fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
+    var currentMorseBuffer by remember { mutableStateOf("") }
+    var lastTapTime by remember { mutableLongStateOf(0L) }
+    var pressStartTime by remember { mutableLongStateOf(0L) }
     
+    val morseReverseMap = mapOf(
+        ".-" to "A", "-..." to "B", "-.-." to "C", "-.." to "D", "." to "E", "..-." to "F",
+        "--." to "G", "...." to "H", ".." to "I", ".---" to "J", "-.-" to "K", ".-.." to "L",
+        "--" to "M", "-." to "N", "---" to "O", ".--." to "P", "--.-" to "Q", ".-." to "R",
+        "..." to "S", "-" to "T", "..-" to "U", "...-" to "V", ".--" to "W", "-..-" to "X",
+        "-.--" to "Y", "--.." to "Z", "-----" to "0", ".----" to "1", "..---" to "2", 
+        "...--" to "3", "....-" to "4", "....." to "5", "-...." to "6", "--..." to "7", 
+        "---.." to "8", "----." to "9"
+    )
+
+    fun decodeChar(morse: String): String = morseReverseMap[morse] ?: "?"
+
     // 이미 재생된 메시지 ID들을 추적하여 탭 이동 시 중복 재생 방지
     var playedMessageIds by remember { mutableStateOf(messages.map { it.id }.toSet()) }
     var isTextVisible by remember { mutableStateOf(true) }
@@ -47,6 +66,17 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     val vibrator = remember { context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator }
     val toneGenerator = remember { MorseToneGenerator() }
     val scope = rememberCoroutineScope()
+
+    // Space detection for morse input
+    LaunchedEffect(lastTapTime) {
+        if (lastTapTime > 0) {
+            delay(800) // Word space
+            if (System.currentTimeMillis() - lastTapTime >= 800 && currentMorseBuffer.isNotEmpty()) {
+                inputText += decodeChar(currentMorseBuffer)
+                currentMorseBuffer = ""
+            }
+        }
+    }
 
     val morseMap = mapOf(
         "A" to ".-", "B" to "-...", "C" to "-.-.", "D" to "-..", "E" to ".", "F" to "..-.",
@@ -155,17 +185,56 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 ),
-                placeholder = { Text("Protocol input...") }
+                placeholder = { 
+                    Text(
+                        if (currentMorseBuffer.isEmpty()) "Protocol input..." else currentMorseBuffer,
+                        color = if (currentMorseBuffer.isEmpty()) Color.Gray else Color(0xFF2DD4BF)
+                    ) 
+                }
             )
             IconButton(
                 onClick = {
                     if (inputText.isNotEmpty()) {
                         viewModel.sendMessage(inputText, encodeToMorse(inputText))
                         inputText = ""
+                        currentMorseBuffer = ""
                     }
                 }
             ) {
                 Icon(Icons.Default.Send, contentDescription = "Send", tint = Color(0xFF2DD4BF))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Morse Pulse Pad for Wifi Chat
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0xFF1F2937))
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = {
+                            pressStartTime = System.currentTimeMillis()
+                            toneGenerator.start()
+                            vibrator.vibrate(50)
+                            tryAwaitRelease()
+                            val duration = System.currentTimeMillis() - pressStartTime
+                            toneGenerator.stop()
+                            
+                            val symbol = if (duration < 200) "." else "-"
+                            currentMorseBuffer += symbol
+                            lastTapTime = System.currentTimeMillis()
+                        }
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("PULSE PAD", color = Color(0xFF2DD4BF).copy(alpha = 0.5f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("Tap to transmit Morse", color = Color.Gray, fontSize = 12.sp)
             }
         }
     }
