@@ -12,6 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.ui.tooling.preview.Preview
+
 @Composable
 fun MessageDisplay(
     message: String,
@@ -20,26 +22,32 @@ fun MessageDisplay(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color(0xFF111827), RoundedCornerShape(24.dp))
-            .padding(24.dp)
-            .heightIn(min = 120.dp)
+            .background(Color(0xFF111827), RoundedCornerShape(16.dp))
+            .padding(16.dp)
+            .heightIn(min = 80.dp)
     ) {
         Column {
             Text(
-                "DECODED_STREAM //",
+                "STREAM //",
                 color = Color(0xFF2DD4BF).copy(alpha = 0.5f),
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                message.ifEmpty { "WAITING_FOR_SIGNAL..." },
+                message.ifEmpty { "READY..." },
                 color = if (message.isEmpty()) Color.White.copy(alpha = 0.1f) else Color.White,
-                fontSize = 32.sp,
+                fontSize = 24.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Black,
-                lineHeight = 38.sp
+                lineHeight = 28.sp
             )
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0B)
+@Composable
+fun MessageDisplayPreview() {
+    MessageDisplay(message = "HELLO WORLD")
 }

@@ -20,6 +20,8 @@ import com.example.morsedecoder.audio.MorseToneGenerator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+import androidx.compose.ui.tooling.preview.Preview
+
 @Composable
 fun EncoderScreen(toneGenerator: MorseToneGenerator, animateVibrate: (Long) -> Unit) {
     var inputText by remember { mutableStateOf("") }
@@ -126,4 +128,13 @@ fun EncoderScreen(toneGenerator: MorseToneGenerator, animateVibrate: (Long) -> U
             }
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0B)
+@Composable
+fun EncoderScreenPreview() {
+    EncoderScreen(
+        toneGenerator = MorseToneGenerator(),
+        animateVibrate = {}
+    )
 }

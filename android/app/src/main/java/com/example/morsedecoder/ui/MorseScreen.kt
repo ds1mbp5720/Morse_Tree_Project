@@ -24,6 +24,8 @@ import com.example.morsedecoder.ui.components.MorseTreeVisualizer
 import com.example.morsedecoder.ui.components.PulsePad
 import kotlinx.coroutines.delay
 
+import androidx.compose.ui.tooling.preview.Preview
+
 @Composable
 fun MorseScreen(context: Context) {
     var message by remember { mutableStateOf("") }
@@ -66,11 +68,11 @@ fun MorseScreen(context: Context) {
 
         MorseTreeVisualizer(currentPath = currentSequence)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         MessageDisplay(message = message)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Sequence Bar
         Box(
@@ -131,5 +133,14 @@ fun MorseScreen(context: Context) {
             }
             currentSequence = ""
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MorseScreenPreview() {
+    MaterialTheme {
+        // Mock context normally wouldn't work well in preview for system services,
+        // but for layout visualization it's often okay or requires a wrapper.
     }
 }

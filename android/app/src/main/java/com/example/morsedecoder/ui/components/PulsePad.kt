@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.ui.tooling.preview.Preview
+
 @Composable
 fun PulsePad(
     isPressing: Boolean,
@@ -54,4 +56,14 @@ fun PulsePad(
             )
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0B)
+@Composable
+fun PulsePadPreview() {
+    PulsePad(
+        isPressing = false,
+        onPressStart = {},
+        onPressEnd = {}
+    )
 }
