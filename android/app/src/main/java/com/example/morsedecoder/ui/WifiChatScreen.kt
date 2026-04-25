@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -34,6 +35,10 @@ import kotlinx.coroutines.launch
 fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
+    
+    // 이미 재생된 메시지 ID들을 추적하여 탭 이동 시 중복 재생 방지
+    var playedMessageIds by remember { mutableStateOf(messages.map { it.id }.toSet()) }
+    var isTextVisible by remember { mutableStateOf(true) }
     
     var playingMessageId by remember { mutableStateOf<String?>(null) }
     var playingCharIndex by remember { mutableStateOf(-1) }
@@ -76,11 +81,12 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
         playingCharIndex = -1
     }
 
-    // Auto-play incoming messages
-    LaunchedEffect(messages.size) {
+    // 새 메시지 수신 시 자동 재생 (이미 확인된 건 건너뜀)
+    LaunchedEffect(messages) {
         if (messages.isNotEmpty()) {
             val lastMessage = messages.last()
-            if (!lastMessage.isFromMe) {
+            if (!lastMessage.isFromMe && !playedMessageIds.contains(lastMessage.id)) {
+                playedMessageIds = playedMessageIds + lastMessage.id
                 playMorse(lastMessage.id, lastMessage.morse)
             }
         }
@@ -109,6 +115,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 ChatBubble(
                     message = message,
                     isPlaying = playingMessageId == message.id,
+                    isTextVisible = isTextVisible,
                     playingIndex = if (playingMessageId == message.id) playingCharIndex else -1,
                     onPlay = {
                         scope.launch { playMorse(message.id, message.morse) }
@@ -123,6 +130,21 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text("TEXT", color = Color.Gray, fontSize = 10.sp)
+                Switch(
+                    checked = isTextVisible,
+                    onCheckedChange = { isTextVisible = it },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color(0xFF2DD4BF),
+                        checkedTrackColor = Color(0xFF2DD4BF).copy(alpha = 0.5f)
+                    ),
+                    modifier = Modifier.scale(0.7f)
+                )
+            }
             TextField(
                 value = inputText,
                 onValueChange = { inputText = it },
@@ -154,6 +176,7 @@ fun ChatBubble(
     message: MorseMessage,
     isPlaying: Boolean,
     playingIndex: Int,
+    isTextVisible: Boolean,
     onPlay: () -> Unit
 ) {
     Column(
@@ -193,22 +216,24 @@ fun ChatBubble(
                     .padding(12.dp)
             ) {
                 Column {
-                    val annotatedText = buildAnnotatedString {
-                        message.text.forEachIndexed { index, char ->
-                            val style = if (isPlaying && index == playingIndex) {
-                                SpanStyle(color = if (message.isFromMe) Color.White else Color(0xFF2DD4BF), fontWeight = FontWeight.Black)
-                            } else {
-                                SpanStyle(color = if (message.isFromMe) Color(0xFF0A0A0B) else Color.White)
-                            }
-                            withStyle(style) {
-                                append(char)
+                    if (isTextVisible) {
+                        val annotatedText = buildAnnotatedString {
+                            message.text.forEachIndexed { index, char ->
+                                val style = if (isPlaying && index == playingIndex) {
+                                    SpanStyle(color = if (message.isFromMe) Color.White else Color(0xFF2DD4BF), fontWeight = FontWeight.Black)
+                                } else {
+                                    SpanStyle(color = if (message.isFromMe) Color(0xFF0A0A0B) else Color.White)
+                                }
+                                withStyle(style) {
+                                    append(char)
+                                }
                             }
                         }
+                        Text(
+                            text = annotatedText,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    Text(
-                        text = annotatedText,
-                        fontWeight = FontWeight.Bold
-                    )
                     Text(
                         message.morse,
                         color = (if (message.isFromMe) Color(0xFF0A0A0B) else Color.White).copy(alpha = 0.7f),
