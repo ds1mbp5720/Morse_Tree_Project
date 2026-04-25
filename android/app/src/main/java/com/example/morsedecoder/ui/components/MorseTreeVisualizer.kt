@@ -28,76 +28,126 @@ fun MorseTreeVisualizer(
         "D" to "-..", "K" to "-.-", "G" to "--.", "O" to "---"
     )
 
-    Canvas(modifier = modifier.fillMaxWidth().height(300.dp)) {
+    Canvas(modifier = modifier.fillMaxWidth().height(350.dp)) {
         val width = size.width
         val height = size.height
         val centerX = width / 2
-        val startY = 30f
-        val stepY = 60.dp.toPx()
-        val stepX = 80.dp.toPx()
+        val startY = 40f
+        val stepY = 55.dp.toPx()
+        val baseStepX = 100.dp.toPx()
 
-        fun drawNode(char: String, path: String, x: Float, y: Float, level: Int) {
+        val paint = android.graphics.Paint().apply {
+            textAlign = android.graphics.Paint.Align.CENTER
+            isFakeBoldText = true
+        }
+
+        fun drawMorseNode(char: String, path: String, x: Float, y: Float, level: Int) {
             val isActive = currentPath == path
             val nodeColor = if (isActive) Color(0xFF2DD4BF) else Color(0xFF374151)
-            val textColor = if (isActive) Color.White else Color.Gray
-
-            // Draw children lines
-            if (level < 2) { // 2단계 까지만 그리기 (공간 문제)
-                val nextXStep = stepX / (level + 1)
-                // Left (.)
+            val textColor = if (isActive) Color.White else Color(0xFF94A3B8)
+            
+            // Draw lines to children first
+            if (level < 4) {
+                val nextXStep = baseStepX / Math.pow(2.0, level.toDouble()).toFloat()
+                
+                // Left child (.)
                 drawLine(
                     color = Color(0xFF1F2937),
                     start = Offset(x, y),
                     end = Offset(x - nextXStep, y + stepY),
-                    strokeWidth = 2f
+                    strokeWidth = 3f
                 )
-                // Right (-)
+                // Right child (-)
                 drawLine(
                     color = Color(0xFF1F2937),
                     start = Offset(x, y),
                     end = Offset(x + nextXStep, y + stepY),
-                    strokeWidth = 2f
+                    strokeWidth = 3f
                 )
             }
 
-            // Draw Node Shape
+            // Draw current node
             if (path.isEmpty()) {
                 drawCircle(color = nodeColor, radius = 15f, center = Offset(x, y), style = Stroke(width = 4f))
-            } else if (path.endsWith(".")) {
-                drawCircle(color = nodeColor, radius = 12f, center = Offset(x, y))
-            } else if (path.endsWith("-")) {
-                drawRect(
-                    color = nodeColor,
-                    topLeft = Offset(x - 20f, y - 8f),
-                    size = androidx.compose.ui.geometry.Size(40f, 16f)
-                )
+            } else {
+                if (path.last() == '.') {
+                    drawCircle(color = nodeColor, radius = 10f, center = Offset(x, y))
+                } else {
+                    drawRect(
+                        color = nodeColor,
+                        topLeft = Offset(x - 18f, y - 6f),
+                        size = androidx.compose.ui.geometry.Size(36f, 12f)
+                    )
+                }
             }
 
-            // Text label
-            drawContext.canvas.nativeCanvas.drawText(
-                char,
-                x + 20f,
-                y + 10f,
-                android.graphics.Paint().apply {
-                    color = textColor.hashCode()
-                    textSize = 10.sp.toPx()
-                    isFakeBoldText = isActive
-                }
-            )
+            // Text Label
+            if (char != " " && char != "START") {
+                drawContext.canvas.nativeCanvas.drawText(
+                    char,
+                    x,
+                    y - 25f,
+                    paint.apply {
+                        color = textColor.hashCode()
+                        textSize = (if (isActive) 15.sp else 11.sp).toPx()
+                    }
+                )
+            } else if (char == "START") {
+                drawContext.canvas.nativeCanvas.drawText(
+                    char,
+                    x,
+                    y - 25f,
+                    paint.apply {
+                        color = textColor.hashCode()
+                        textSize = 10.sp.toPx()
+                    }
+                )
+            }
         }
 
-        // 0단계: Root
-        drawNode("ROOT", "", centerX, startY, 0)
-        
-        // 1단계: E, T
-        drawNode("E", ".", centerX - stepX, startY + stepY, 1)
-        drawNode("T", "-", centerX + stepX, startY + stepY, 1)
+        // Tree structure definitions
+        fun render(x: Float, y: Float, path: String, level: Int) {
+            val char = when(path) {
+                "" -> "START"
+                "." -> "E"
+                "-" -> "T"
+                ".." -> "I"
+                ".-" -> "A"
+                "-." -> "N"
+                "--" -> "M"
+                "..." -> "S"
+                "..-" -> "U"
+                ".-." -> "R"
+                ".--" -> "W"
+                "-.." -> "D"
+                "-.-" -> "K"
+                "--." -> "G"
+                "---" -> "O"
+                "...." -> "H"
+                "...-" -> "V"
+                "..-." -> "F"
+                ".-.." -> "L"
+                ".--." -> "P"
+                ".---" -> "J"
+                "-..." -> "B"
+                "-..-" -> "X"
+                "-.-." -> "C"
+                "-.--" -> "Y"
+                "--.." -> "Z"
+                "--.-" -> "Q"
+                else -> " "
+            }
+            
+            drawMorseNode(char, path, x, y, level)
+            
+            if (level < 4) {
+                val nextXStep = baseStepX / Math.pow(2.0, level.toDouble()).toFloat()
+                render(x - nextXStep, y + stepY, path + ".", level + 1)
+                render(x + nextXStep, y + stepY, path + "-", level + 1)
+            }
+        }
 
-        // 2단계: I, A, N, M
-        drawNode("I", "..", centerX - stepX - stepX/2, startY + stepY*2, 2)
-        drawNode("A", ".-", centerX - stepX + stepX/2, startY + stepY*2, 2)
-        drawNode("N", "-.", centerX + stepX - stepX/2, startY + stepY*2, 2)
-        drawNode("M", "--", centerX + stepX + stepX/2, startY + stepY*2, 2)
+        render(centerX, startY, "", 0)
     }
 }
 
