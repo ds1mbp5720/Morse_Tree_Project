@@ -78,7 +78,7 @@ fun EncoderScreen(toneGenerator: MorseToneGenerator, animateVibrate: (Long) -> U
                 
                 // Show meaning if input matches a known prosign name
                 val upperInput = inputText.uppercase()
-                val potentialMorse = MorseDictionary.encode(upperInput).replace(" ", "")
+                val potentialMorse = MorseDictionary.encode(upperInput)
                 val meaning = MorseDictionary.getMeaning(potentialMorse)
                 if (meaning != null) {
                     Text(

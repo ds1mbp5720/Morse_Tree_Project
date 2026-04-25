@@ -24,16 +24,21 @@ object MorseDictionary {
     private val morseToTextMap = textToMorseMap.entries.associate { it.value to it.key }
 
     private val prosignMap = mapOf(
-        ".-.-" to "New Line",
-        ".-.-." to "End of Message",
-        ".-..." to "Wait",
-        "-...-" to "Break / New Para",
-        "-.-.-" to "Start of Transmission",
+        ".-.-." to "AR: End of Message",
+        ".-..." to "AS: Wait/Stand by",
+        "-.-" to "K: Go ahead / Over",
+        "-.-.-" to "KN: Go ahead (specific station)",
+        "...-.-" to "SK: End of Work / Clear",
+        "-...-" to "BT: Break / Separator",
+        ".-." to "R: Roger / Received",
+        "...---..." to "SOS: Distress Call",
         "........" to "Error",
-        "...-.-" to "End of Contact",
-        "...---..." to "SOS / Distress",
-        "-.-" to "Invitation to Transmit",
-        "-.-.--" to "Specific Invite"
+        ".-.-" to "New Line",
+        "--.- - ...." to "QTH: Your location?",
+        "--.- ... .-.." to "QSL: Acknowledge receipt",
+        "--... ...--" to "73: Best regards",
+        "-.-. --.-" to "CQ: Calling any station",
+        "--.- .-. -" to "QRT: Stop sending"
     )
 
     /**
@@ -41,15 +46,23 @@ object MorseDictionary {
      */
     fun encode(text: String): String {
         return text.uppercase().map { char ->
-            textToMorseMap[char.toString()] ?: ""
-        }.filter { it.isNotEmpty() }.joinToString(" ")
+            if (char == ' ') "" // Space is represented as an empty segment to maintain index
+            else textToMorseMap[char.toString()] ?: ""
+        }.joinToString(" ")
     }
 
     /**
      * 단일 모스 부호 뭉치를 텍스트 문자로 변환합니다.
      */
     fun decodeChar(morse: String): String {
-        return prosignMap[morse]?.let { "[$it]" } ?: morseToTextMap[morse] ?: "?"
+        if (morse.isEmpty()) return " "
+        val meaning = prosignMap[morse]
+        if (meaning != null) {
+            val label = meaning.substringBefore(":")
+            if (label.length == 1) return label // K, R 등은 문자로 표시
+            return "[$label]"
+        }
+        return morseToTextMap[morse] ?: "?"
     }
 
     /**
@@ -63,6 +76,7 @@ object MorseDictionary {
      * 전체 모스 부호 문장을 텍스트로 변환합니다.
      */
     fun decodeSentence(morseSentence: String): String {
+        if (morseSentence.isEmpty()) return ""
         return morseSentence.split(" ").joinToString("") { decodeChar(it) }
     }
 }

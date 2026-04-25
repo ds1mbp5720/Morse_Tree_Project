@@ -217,8 +217,8 @@ fun MorseScreen(context: Context) {
     LaunchedEffect(currentSequence) {
         if (currentSequence.isNotEmpty()) {
             lastInputTime = System.currentTimeMillis()
-            delay(1200) // Wait for user to stop typing
-            if (System.currentTimeMillis() - lastInputTime >= 1200) {
+            delay(600) // Wait for user to stop typing
+            if (System.currentTimeMillis() - lastInputTime >= 600) {
                 val char = MorseDictionary.decodeChar(currentSequence)
                 if (char != "?") {
                     message += char
@@ -228,10 +228,10 @@ fun MorseScreen(context: Context) {
         }
     }
 
-    LaunchedEffect(lastInputTime) {
+    LaunchedEffect(lastInputTime, currentSequence) {
         if (lastInputTime > 0 && currentSequence.isEmpty()) {
-            delay(2000)
-            if (System.currentTimeMillis() - lastInputTime >= 2000 && message.isNotEmpty() && !message.endsWith(" ")) {
+            delay(1000)
+            if (System.currentTimeMillis() - lastInputTime >= 1000 && message.isNotEmpty() && !message.endsWith(" ")) {
                 message += " "
             }
         }

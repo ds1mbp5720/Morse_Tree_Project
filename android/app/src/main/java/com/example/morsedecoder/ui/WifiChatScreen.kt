@@ -85,15 +85,19 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
         for (i in parts.indices) {
             playingCharIndex = i
             val part = parts[i]
-            for (symbol in part) {
-                toneGenerator.start()
-                val duration = if (symbol == '.') unit else unit * 3
-                vibrator.vibrate(duration)
-                delay(duration)
-                toneGenerator.stop()
-                delay(unit)
+            if (part.isEmpty()) {
+                delay(unit * 4) // Word gap (total 7 units with trailing delay)
+            } else {
+                for (symbol in part) {
+                    toneGenerator.start()
+                    val duration = if (symbol == '.') unit else unit * 3
+                    vibrator.vibrate(duration)
+                    delay(duration)
+                    toneGenerator.stop()
+                    delay(unit)
+                }
             }
-            delay(unit * 2) 
+            delay(unit * 2) // Letter gap
         }
         playingMessageId = null
         playingCharIndex = -1
@@ -275,15 +279,22 @@ fun ChatBubble(
             ) {
                 Column {
                     if (isTextVisible) {
+                        val textParts = remember(message.morse) { 
+                            message.morse.split(" ").map { MorseDictionary.decodeChar(it) } 
+                        }
                         val annotatedText = buildAnnotatedString {
-                            message.text.forEachIndexed { index, char ->
+                            textParts.forEachIndexed { index, part ->
                                 val style = if (isPlaying && index == playingIndex) {
-                                    SpanStyle(color = if (message.isFromMe) Color.White else Color(0xFF2DD4BF), fontWeight = FontWeight.Black)
+                                    SpanStyle(
+                                        color = if (message.isFromMe) Color.White else Color(0xFF2DD4BF),
+                                        fontWeight = FontWeight.Black,
+                                        background = if (message.isFromMe) Color.Black.copy(alpha = 0.2f) else Color.Transparent
+                                    )
                                 } else {
                                     SpanStyle(color = if (message.isFromMe) Color(0xFF0A0A0B) else Color.White)
                                 }
                                 withStyle(style) {
-                                    append(char)
+                                    append(part)
                                 }
                             }
                         }
