@@ -1,28 +1,40 @@
 package com.example.morsedecoder.ui
 
+import android.content.Context
+import android.os.Vibrator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.morsedecoder.audio.MorseToneGenerator
 import com.example.morsedecoder.domain.model.MorseMessage
 import com.example.morsedecoder.presentation.ChatViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
+    
+    val context = LocalContext.current
+    val vibrator = remember { context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator }
+    val toneGenerator = remember { MorseToneGenerator() }
+    val scope = rememberCoroutineScope()
 
     val morseMap = mapOf(
         "A" to ".-", "B" to "-...", "C" to "-.-.", "D" to "-..", "E" to ".", "F" to "..-.",
@@ -36,6 +48,32 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
         return text.uppercase().map { morseMap[it.toString()] ?: "" }.joinToString(" ")
     }
 
+    suspend fun playMorse(morse: String) {
+        val unit = 100L
+        val parts = morse.split(" ")
+        for (part in parts) {
+            for (symbol in part) {
+                toneGenerator.start()
+                val duration = if (symbol == '.') unit else unit * 3
+                vibrator.vibrate(duration)
+                delay(duration)
+                toneGenerator.stop()
+                delay(unit)
+            }
+            delay(unit * 2) // Extra delay between letters
+        }
+    }
+
+    // Auto-play incoming messages
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
+            val lastMessage = messages.last()
+            if (!lastMessage.isFromMe) {
+                playMorse(lastMessage.morse)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -43,7 +81,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             .padding(16.dp)
     ) {
         Text(
-            "WIFI_P2P_MESSSENGER_V1.0",
+            "WIFI_P2P_MESSSENGER_V1.1",
             color = Color(0xFF2DD4BF),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
@@ -56,7 +94,9 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages.reversed()) { message ->
-                ChatBubble(message)
+                ChatBubble(message, onPlay = {
+                    scope.launch { playMorse(message.morse) }
+                })
             }
         }
 
@@ -93,7 +133,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
 }
 
 @Composable
-fun ChatBubble(message: MorseMessage) {
+fun ChatBubble(message: MorseMessage, onPlay: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -106,26 +146,44 @@ fun ChatBubble(message: MorseMessage) {
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace
         )
-        Box(
-            modifier = Modifier
-                .background(
-                    if (message.isFromMe) Color(0xFF2DD4BF) else Color(0xFF374151),
-                    RoundedCornerShape(12.dp)
-                )
-                .padding(12.dp)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = if (message.isFromMe) Arrangement.End else Arrangement.Start,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column {
-                Text(
-                    message.text,
-                    color = if (message.isFromMe) Color(0xFF0A0A0B) else Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    message.morse,
-                    color = (if (message.isFromMe) Color(0xFF0A0A0B) else Color.White).copy(alpha = 0.7f),
-                    fontSize = 12.sp,
-                    fontFamily = FontFamily.Monospace
-                )
+            if (message.isFromMe) {
+                IconButton(onClick = onPlay, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                }
+            }
+            
+            Box(
+                modifier = Modifier
+                    .background(
+                        if (message.isFromMe) Color(0xFF2DD4BF) else Color(0xFF374151),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .padding(12.dp)
+            ) {
+                Column {
+                    Text(
+                        message.text,
+                        color = if (message.isFromMe) Color(0xFF0A0A0B) else Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        message.morse,
+                        color = (if (message.isFromMe) Color(0xFF0A0A0B) else Color.White).copy(alpha = 0.7f),
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+            }
+
+            if (!message.isFromMe) {
+                IconButton(onClick = onPlay, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                }
             }
         }
     }
