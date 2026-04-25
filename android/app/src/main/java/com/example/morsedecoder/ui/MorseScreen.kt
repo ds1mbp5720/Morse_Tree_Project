@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
+import com.example.morsedecoder.domain.util.MorseDictionary
+
 @Composable
 fun MorseScreen(context: Context) {
     var message by remember { mutableStateOf("") }
@@ -40,17 +42,6 @@ fun MorseScreen(context: Context) {
     
     val scope = rememberCoroutineScope()
     
-    val morseMap = mapOf(
-        ".-" to "A", "-..." to "B", "-.-." to "C", "-.." to "D", "." to "E",
-        "..-." to "F", "--." to "G", "...." to "H", ".." to "I", ".---" to "J",
-        "-.-" to "K", ".-.." to "L", "--" to "M", "-." to "N", "---" to "O",
-        ".--." to "P", "--.-" to "Q", ".-." to "R", "..." to "S", "-" to "T",
-        "..-" to "U", "...-" to "V", ".--" to "W", "-..-" to "X", "-.--" to "Y", "--.." to "Z"
-    )
-
-    // Reverse map for playback
-    val charToMorse = morseMap.entries.associate { (k, v) -> v to k }
-
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     val toneGenerator = remember { MorseToneGenerator() }
 
@@ -60,8 +51,8 @@ fun MorseScreen(context: Context) {
             isPlayingBack = true
             val unit = 100L
             for (char in message.uppercase()) {
-                val code = charToMorse[char.toString()]
-                if (code != null) {
+                val code = MorseDictionary.encode(char.toString())
+                if (code.isNotEmpty()) {
                     for (symbol in code) {
                         toneGenerator.start()
                         val duration = if (symbol == '.') unit else unit * 3
@@ -72,7 +63,7 @@ fun MorseScreen(context: Context) {
                     }
                     delay(unit * 3) // Inter-letter gap
                 } else if (char == ' ') {
-                    delay(unit * 7) // Word gap (though message usually doesn't have spaces yet in this specific implementation)
+                    delay(unit * 7)
                 }
             }
             isPlayingBack = false
@@ -111,7 +102,7 @@ fun MorseScreen(context: Context) {
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val morseCode = message.uppercase().map { charToMorse[it.toString()] ?: "" }.joinToString(" ")
+            val morseCode = MorseDictionary.encode(message)
             MessageDisplay(message = message, morseCode = morseCode)
 
             // Sequence Bar
@@ -186,8 +177,8 @@ fun MorseScreen(context: Context) {
     LaunchedEffect(currentSequence) {
         if (currentSequence.isNotEmpty()) {
             delay(1200) // Wait for user to stop typing
-            val char = morseMap[currentSequence]
-            if (char != null) {
+            val char = MorseDictionary.decodeChar(currentSequence)
+            if (char != "?") {
                 message += char
             }
             currentSequence = ""

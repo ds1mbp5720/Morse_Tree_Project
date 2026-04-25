@@ -22,23 +22,15 @@ import kotlinx.coroutines.launch
 
 import androidx.compose.ui.tooling.preview.Preview
 
+import com.example.morsedecoder.domain.util.MorseDictionary
+
 @Composable
 fun EncoderScreen(toneGenerator: MorseToneGenerator, animateVibrate: (Long) -> Unit) {
     var inputText by remember { mutableStateOf("") }
     var isTransmitting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val morseMap = mapOf(
-        'A' to ".-", 'B' to "-...", 'C' to "-.-.", 'D' to "-..", 'E' to ".", 'F' to "..-.",
-        'G' to "--.", 'H' to "....", 'I' to "..", 'J' to ".---", 'K' to "-.-", 'L' to ".-..",
-        'M' to "--", 'N' to "-.", 'O' to "---", 'P' to ".--.", 'Q' to "--.-", 'R' to ".-.",
-        'S' to "...", 'T' to "-", 'U' to "..-", 'V' to "...-", 'W' to ".--", 'X' to "-..-",
-        'Y' to "-.--", 'Z' to "--..", ' ' to "/"
-    )
-
-    fun encode(text: String): String {
-        return text.uppercase().map { morseMap[it] ?: "" }.joinToString(" ")
-    }
+    fun encode(text: String): String = MorseDictionary.encode(text)
 
     Column(
         modifier = Modifier

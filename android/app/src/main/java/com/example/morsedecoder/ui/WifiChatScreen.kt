@@ -35,6 +35,8 @@ import com.example.morsedecoder.presentation.ChatViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+import com.example.morsedecoder.domain.util.MorseDictionary
+
 @Composable
 fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
@@ -43,18 +45,6 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     var lastTapTime by remember { mutableStateOf(0L) }
     var pressStartTime by remember { mutableStateOf(0L) }
     
-    val morseReverseMap = mapOf(
-        ".-" to "A", "-..." to "B", "-.-." to "C", "-.." to "D", "." to "E", "..-." to "F",
-        "--." to "G", "...." to "H", ".." to "I", ".---" to "J", "-.-" to "K", ".-.." to "L",
-        "--" to "M", "-." to "N", "---" to "O", ".--." to "P", "--.-" to "Q", ".-." to "R",
-        "..." to "S", "-" to "T", "..-" to "U", "...-" to "V", ".--" to "W", "-..-" to "X",
-        "-.--" to "Y", "--.." to "Z", "-----" to "0", ".----" to "1", "..---" to "2", 
-        "...--" to "3", "....-" to "4", "....." to "5", "-...." to "6", "--..." to "7", 
-        "---.." to "8", "----." to "9"
-    )
-
-    fun decodeChar(morse: String): String = morseReverseMap[morse] ?: "?"
-
     // 이미 재생된 메시지 ID들을 추적하여 탭 이동 시 중복 재생 방지
     var playedMessageIds by remember { mutableStateOf(messages.map { it.id }.toSet()) }
     var isTextVisible by remember { mutableStateOf(true) }
@@ -70,25 +60,22 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     // Space detection for morse input
     LaunchedEffect(lastTapTime) {
         if (lastTapTime > 0) {
-            delay(800) // Word space
+            // 1단계: 0.8초 동안 입력 없으면 글자 변환
+            delay(800) 
             if (System.currentTimeMillis() - lastTapTime >= 800 && currentMorseBuffer.isNotEmpty()) {
-                inputText += decodeChar(currentMorseBuffer)
+                inputText += MorseDictionary.decodeChar(currentMorseBuffer)
                 currentMorseBuffer = ""
+            }
+            
+            // 2단계: 총 2초 동안 입력 없으면 띄어쓰기 추가
+            delay(1200) 
+            if (System.currentTimeMillis() - lastTapTime >= 2000 && inputText.isNotEmpty() && !inputText.endsWith(" ")) {
+                inputText += " "
             }
         }
     }
 
-    val morseMap = mapOf(
-        "A" to ".-", "B" to "-...", "C" to "-.-.", "D" to "-..", "E" to ".", "F" to "..-.",
-        "G" to "--.", "H" to "....", "I" to "..", "J" to ".---", "K" to "-.-", "L" to ".-..",
-        "M" to "--", "N" to "-.", "O" to "---", "P" to ".--.", "Q" to "--.-", "R" to ".-.",
-        "S" to "...", "T" to "-", "U" to "..-", "V" to "...-", "W" to ".--", "X" to "-..-",
-        "Y" to "-.--", "Z" to "--.."
-    )
-
-    fun encodeToMorse(text: String): String {
-        return text.uppercase().map { morseMap[it.toString()] ?: "" }.joinToString(" ")
-    }
+    fun encodeToMorse(text: String): String = MorseDictionary.encode(text)
 
     suspend fun playMorse(messageId: String, morse: String) {
         playingMessageId = messageId
