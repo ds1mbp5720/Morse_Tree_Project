@@ -41,31 +41,67 @@ fun MorseTreeVisualizer(
             isFakeBoldText = true
         }
 
-        fun drawMorseNode(char: String, path: String, x: Float, y: Float, level: Int) {
+        fun getChar(path: String): String {
+            return when(path) {
+                "" -> "START"
+                "." -> "E"
+                "-" -> "T"
+                ".." -> "I"
+                ".-" -> "A"
+                "-." -> "N"
+                "--" -> "M"
+                "..." -> "S"
+                "..-" -> "U"
+                ".-." -> "R"
+                ".--" -> "W"
+                "-.." -> "D"
+                "-.-" -> "K"
+                "--." -> "G"
+                "---" -> "O"
+                "...." -> "H"
+                "...-" -> "V"
+                "..-." -> "F"
+                ".-.." -> "L"
+                ".--." -> "P"
+                ".---" -> "J"
+                "-..." -> "B"
+                "-..-" -> "X"
+                "-.-." -> "C"
+                "-.--" -> "Y"
+                "--.." -> "Z"
+                "--.-" -> "Q"
+                // Numbers (Level 5)
+                "-----" -> "0"
+                ".----" -> "1"
+                "..---" -> "2"
+                "...--" -> "3"
+                "....-" -> "4"
+                "....." -> "5"
+                "-...." -> "6"
+                "--..." -> "7"
+                "---.." -> "8"
+                "----." -> "9"
+                "-..-." -> "/"
+                // Special characters (Level 6)
+                ".-.-.-" -> "."
+                "--..--" -> ","
+                "..--.." -> "?"
+                "-.-.--" -> "!"
+                else -> " "
+            }
+        }
+
+        fun hasContent(path: String, level: Int): Boolean {
+            if (getChar(path) != " ") return true
+            if (level >= 6) return false
+            return hasContent(path + ".", level + 1) || hasContent(path + "-", level + 1)
+        }
+
+        fun drawMorseNode(char: String, path: String, x: Float, y: Float) {
             val isActive = currentPath == path
             val nodeColor = if (isActive) Color(0xFF2DD4BF) else Color(0xFF374151)
             val textColor = if (isActive) Color.White else Color(0xFF94A3B8)
             
-            // Draw lines to children first
-            if (level < 6) {
-                val nextXStep = baseStepX / Math.pow(2.4, level.toDouble()).toFloat()
-                
-                // Left child (.)
-                drawLine(
-                    color = Color(0xFF1F2937),
-                    start = Offset(x, y),
-                    end = Offset(x - nextXStep, y + stepY),
-                    strokeWidth = 3f
-                )
-                // Right child (-)
-                drawLine(
-                    color = Color(0xFF1F2937),
-                    start = Offset(x, y),
-                    end = Offset(x + nextXStep, y + stepY),
-                    strokeWidth = 3f
-                )
-            }
-
             // Draw current node
             if (path.isEmpty()) {
                 drawCircle(color = nodeColor, radius = 15f, center = Offset(x, y), style = Stroke(width = 4f))
@@ -107,60 +143,35 @@ fun MorseTreeVisualizer(
 
         // Tree structure definitions
         fun render(x: Float, y: Float, path: String, level: Int) {
-            val char = when(path) {
-                "" -> "START"
-                "." -> "E"
-                "-" -> "T"
-                ".." -> "I"
-                ".-" -> "A"
-                "-." -> "N"
-                "--" -> "M"
-                "..." -> "S"
-                "..-" -> "U"
-                ".-." -> "R"
-                ".--" -> "W"
-                "-.." -> "D"
-                "-.-" -> "K"
-                "--." -> "G"
-                "---" -> "O"
-                "...." -> "H"
-                "...-" -> "V"
-                "..-." -> "F"
-                ".-.." -> "L"
-                ".--." -> "P"
-                ".---" -> "J"
-                "-..." -> "B"
-                "-..-" -> "X"
-                "-.-." -> "C"
-                "-.--" -> "Y"
-                "--.." -> "Z"
-                "--.-" -> "Q"
-                // Numbers (Level 5)
-                "-----" -> "0"
-                ".----" -> "1"
-                "..---" -> "2"
-                "...--" -> "3"
-                "....-" -> "4"
-                "....." -> "5"
-                "-...." -> "6"
-                "--..." -> "7"
-                "---.." -> "8"
-                "----." -> "9"
-                // Special characters (Level 6)
-                ".-.-.-" -> "."
-                "--..--" -> ","
-                "..--.." -> "?"
-                "-.-.--" -> "!"
-                "-..-." -> "/"
-                else -> " "
-            }
-            
-            drawMorseNode(char, path, x, y, level)
+            val char = getChar(path)
+            drawMorseNode(char, path, x, y)
             
             if (level < 6) {
                 val nextXStep = baseStepX / Math.pow(2.4, level.toDouble()).toFloat()
-                render(x - nextXStep, y + stepY, path + ".", level + 1)
-                render(x + nextXStep, y + stepY, path + "-", level + 1)
+                
+                // Left child (.)
+                val leftPath = path + "."
+                if (hasContent(leftPath, level + 1)) {
+                    drawLine(
+                        color = Color(0xFF1F2937),
+                        start = Offset(x, y),
+                        end = Offset(x - nextXStep, y + stepY),
+                        strokeWidth = 3f
+                    )
+                    render(x - nextXStep, y + stepY, leftPath, level + 1)
+                }
+                
+                // Right child (-)
+                val rightPath = path + "-"
+                if (hasContent(rightPath, level + 1)) {
+                    drawLine(
+                        color = Color(0xFF1F2937),
+                        start = Offset(x, y),
+                        end = Offset(x + nextXStep, y + stepY),
+                        strokeWidth = 3f
+                    )
+                    render(x + nextXStep, y + stepY, rightPath, level + 1)
+                }
             }
         }
 
