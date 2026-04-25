@@ -68,27 +68,31 @@ fun MorseScreen(context: Context) {
 
         MorseTreeVisualizer(currentPath = currentSequence)
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        MessageDisplay(message = message)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Sequence Bar
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .background(Color(0xFF0F172A), RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
+        // Decoded Stream & Sequence Group
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                currentSequence.ifEmpty { "READY_FOR_INPUT" },
-                color = Color(0xFF2DD4BF),
-                fontSize = 16.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold
-            )
+            MessageDisplay(message = message)
+
+            // Sequence Bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .background(Color(0xFF0F172A), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    currentSequence.ifEmpty { "READY_FOR_INPUT" },
+                    color = Color(0xFF2DD4BF),
+                    fontSize = 16.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))

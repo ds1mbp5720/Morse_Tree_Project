@@ -89,7 +89,7 @@ fun MorseTreeVisualizer(
                     y - 25f,
                     paint.apply {
                         color = textColor.hashCode()
-                        textSize = (if (isActive) 15.sp else 11.sp).toPx()
+                        textSize = (if (isActive) 17.sp else 13.sp).toPx()
                     }
                 )
             } else if (char == "START") {
@@ -99,7 +99,7 @@ fun MorseTreeVisualizer(
                     y - 25f,
                     paint.apply {
                         color = textColor.hashCode()
-                        textSize = 10.sp.toPx()
+                        textSize = 12.sp.toPx()
                     }
                 )
             }

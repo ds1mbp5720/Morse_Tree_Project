@@ -39,17 +39,26 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         NavigationBar(containerColor = Color(0xFF0F172A)) {
+                            val navColors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Color(0xFF2DD4BF),
+                                selectedTextColor = Color(0xFF2DD4BF),
+                                indicatorColor = Color(0xFF2DD4BF).copy(alpha = 0.1f),
+                                unselectedIconColor = Color.Gray,
+                                unselectedTextColor = Color.Gray
+                            )
                             NavigationBarItem(
                                 selected = selectedTab == 0,
                                 onClick = { selectedTab = 0 },
                                 icon = { Icon(Icons.Default.List, contentDescription = "Decoder") },
-                                label = { Text("Decoder") }
+                                label = { Text("Decoder") },
+                                colors = navColors
                             )
                             NavigationBarItem(
                                 selected = selectedTab == 1,
                                 onClick = { selectedTab = 1 },
                                 icon = { Icon(Icons.Default.Send, contentDescription = "Encoder") },
-                                label = { Text("Encoder") }
+                                label = { Text("Encoder") },
+                                colors = navColors
                             )
                         }
                     }
