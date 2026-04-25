@@ -19,19 +19,19 @@
 - **모스 페이로드**: 메시지 전송 시 실제 텍스트와 함께 모스 부호 데이터를 함께 패킷으로 실어 보냅니다.
 - **실시간 채팅**: 별도의 서버 없이 기기 간 직접 소켓 통신을 통해 메시지를 주고받습니다.
 
-## 🏗️ 프로젝트 구조 (Clean Architecture)
+## 🏗️ 프로젝트 구조 (Multi-Module Clean Architecture)
 
-본 프로젝트는 유지보수와 확장성을 위해 **Clean Architecture** 패턴을 적용하여 레이어를 분리했습니다.
+본 프로젝트는 유지보수와 확장성을 위해 **Gradle Multi-Module** 기반의 **Clean Architecture** 패턴을 적용했습니다.
 
-### Layer 구성
-- **Domain Layer**: 비즈니스 로직의 핵심입니다.
-    - `MorseMessage`: 메시지 데이터 모델
-    - `ChatRepository`: 인터페이스 정의 (의존성 역전)
-- **Data Layer**: 상세 구현부입니다.
-    - `WifiChatRepositoryImpl`: `NsdManager`를 이용한 서비스 등록/탐색 및 `ServerSocket`을 이용한 실시간 통신 로직 구현
-- **Presentation Layer**: UI 및 상태 관리입니다.
-    - `ChatViewModel`: UI와 데이터 레이어 사이의 상태 연결
-    - `Compose UI`: Jetpack Compose를 이용한 선언형 UI (MorseScreen, EncoderScreen, WifiChatScreen 등)
+### Module 구성
+- **`:app`**: UI 및 프레젠테이션 레이어 (`MorseScreen`, `ChatViewModel`, `Compose UI`).
+- **`:domain`**: 비즈니스 로직 및 모델 (`MorseMessage`, `ChatRepository` 인터페이스).
+- **`:data`**: 데이터 소스 및 저장소 구현 (`WifiChatRepositoryImpl`, NSD 및 소켓 통신).
+
+### 의존성 규칙
+- `:app` -> `:data` & `:domain`
+- `:data` -> `:domain`
+- `:domain` 은 아무런 내부 모듈 의존성을 가지지 않는 순수 비즈니스 로직 레이어입니다.
 
 ## 🛠️ 기술 스택
 - **Language**: Kotlin / TypeScript (Build Config)

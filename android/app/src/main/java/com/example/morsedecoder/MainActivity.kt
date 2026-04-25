@@ -8,7 +8,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.*
 import com.example.morsedecoder.data.WifiChatRepositoryImpl
 import com.example.morsedecoder.presentation.ChatViewModel
 import com.example.morsedecoder.ui.WifiChatScreen
