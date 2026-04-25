@@ -106,20 +106,32 @@ fun MorseScreen(context: Context) {
             MessageDisplay(message = message, morseCode = morseCode)
 
             // Sequence Bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .background(Color(0xFF0F172A), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    currentSequence.ifEmpty { "READY_FOR_INPUT" },
-                    color = Color(0xFF2DD4BF),
-                    fontSize = 16.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .background(Color(0xFF0F172A), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        currentSequence.ifEmpty { "READY_FOR_INPUT" },
+                        color = Color(0xFF2DD4BF),
+                        fontSize = 16.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                val meaning = MorseDictionary.getMeaning(currentSequence)
+                if (meaning != null) {
+                    Text(
+                        text = "Meaning: $meaning",
+                        color = Color(0xFF2DD4BF),
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
             }
         }
 
@@ -143,18 +155,27 @@ fun MorseScreen(context: Context) {
 
         // Actions
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = { 
-                if (currentSequence.isNotEmpty()) {
-                    currentSequence = ""
-                } else if (message.isNotEmpty()) {
-                    message = message.dropLast(1)
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                TextButton(
+                    onClick = { 
+                        if (currentSequence.isNotEmpty()) {
+                            currentSequence = ""
+                        } else if (message.isNotEmpty()) {
+                            message = message.dropLast(1)
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    Text("BACKSPACE", color = Color.Gray, fontSize = 10.sp)
                 }
-            }) {
-                Text("BACKSPACE", color = Color.Gray)
             }
 
             Button(
@@ -166,18 +187,27 @@ fun MorseScreen(context: Context) {
                     disabledContainerColor = Color.DarkGray
                 ),
                 shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                modifier = Modifier.height(36.dp)
             ) {
                 Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
                 Text("PLAYBACK", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
-            TextButton(onClick = { 
-                message = ""
-                currentSequence = ""
-            }) {
-                Text("CLEAR_ALL", color = Color(0xFFEF4444))
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                TextButton(
+                    onClick = { 
+                        message = ""
+                        currentSequence = ""
+                    },
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    Text("CLEAR_ALL", color = Color(0xFFEF4444), fontSize = 10.sp)
+                }
             }
         }
     }

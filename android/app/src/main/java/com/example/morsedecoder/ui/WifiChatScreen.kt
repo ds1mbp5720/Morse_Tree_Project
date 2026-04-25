@@ -174,10 +174,20 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                     unfocusedTextColor = Color.White
                 ),
                 placeholder = { 
-                    Text(
-                        if (currentMorseBuffer.isEmpty()) "Protocol input..." else currentMorseBuffer,
-                        color = if (currentMorseBuffer.isEmpty()) Color.Gray else Color(0xFF2DD4BF)
-                    ) 
+                    val meaning = MorseDictionary.getMeaning(currentMorseBuffer)
+                    Column {
+                        Text(
+                            if (currentMorseBuffer.isEmpty()) "Protocol input..." else currentMorseBuffer,
+                            color = if (currentMorseBuffer.isEmpty()) Color.Gray else Color(0xFF2DD4BF)
+                        )
+                        if (meaning != null) {
+                            Text(
+                                text = "($meaning)",
+                                color = Color(0xFF2DD4BF).copy(alpha = 0.7f),
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
                 }
             )
             IconButton(
