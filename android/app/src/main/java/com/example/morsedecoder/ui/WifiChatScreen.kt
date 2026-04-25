@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,8 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.morsedecoder.audio.MorseToneGenerator
@@ -30,6 +34,9 @@ import kotlinx.coroutines.launch
 fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
+    
+    var playingMessageId by remember { mutableStateOf<String?>(null) }
+    var playingCharIndex by remember { mutableStateOf(-1) }
     
     val context = LocalContext.current
     val vibrator = remember { context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator }
@@ -48,10 +55,13 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
         return text.uppercase().map { morseMap[it.toString()] ?: "" }.joinToString(" ")
     }
 
-    suspend fun playMorse(morse: String) {
+    suspend fun playMorse(messageId: String, morse: String) {
+        playingMessageId = messageId
         val unit = 100L
         val parts = morse.split(" ")
-        for (part in parts) {
+        for (i in parts.indices) {
+            playingCharIndex = i
+            val part = parts[i]
             for (symbol in part) {
                 toneGenerator.start()
                 val duration = if (symbol == '.') unit else unit * 3
@@ -60,8 +70,10 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 toneGenerator.stop()
                 delay(unit)
             }
-            delay(unit * 2) // Extra delay between letters
+            delay(unit * 2) 
         }
+        playingMessageId = null
+        playingCharIndex = -1
     }
 
     // Auto-play incoming messages
@@ -69,7 +81,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
         if (messages.isNotEmpty()) {
             val lastMessage = messages.last()
             if (!lastMessage.isFromMe) {
-                playMorse(lastMessage.morse)
+                playMorse(lastMessage.id, lastMessage.morse)
             }
         }
     }
@@ -94,9 +106,14 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages.reversed()) { message ->
-                ChatBubble(message, onPlay = {
-                    scope.launch { playMorse(message.morse) }
-                })
+                ChatBubble(
+                    message = message,
+                    isPlaying = playingMessageId == message.id,
+                    playingIndex = if (playingMessageId == message.id) playingCharIndex else -1,
+                    onPlay = {
+                        scope.launch { playMorse(message.id, message.morse) }
+                    }
+                )
             }
         }
 
@@ -133,7 +150,12 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
 }
 
 @Composable
-fun ChatBubble(message: MorseMessage, onPlay: () -> Unit) {
+fun ChatBubble(
+    message: MorseMessage,
+    isPlaying: Boolean,
+    playingIndex: Int,
+    onPlay: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -152,8 +174,13 @@ fun ChatBubble(message: MorseMessage, onPlay: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         ) {
             if (message.isFromMe) {
-                IconButton(onClick = onPlay, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                IconButton(onClick = onPlay, modifier = Modifier.size(24.dp), enabled = !isPlaying) {
+                    Icon(
+                        if (isPlaying) Icons.Default.Refresh else Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        tint = if (isPlaying) Color(0xFF2DD4BF) else Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
             
@@ -166,9 +193,20 @@ fun ChatBubble(message: MorseMessage, onPlay: () -> Unit) {
                     .padding(12.dp)
             ) {
                 Column {
+                    val annotatedText = buildAnnotatedString {
+                        message.text.forEachIndexed { index, char ->
+                            val style = if (isPlaying && index == playingIndex) {
+                                SpanStyle(color = if (message.isFromMe) Color.White else Color(0xFF2DD4BF), fontWeight = FontWeight.Black)
+                            } else {
+                                SpanStyle(color = if (message.isFromMe) Color(0xFF0A0A0B) else Color.White)
+                            }
+                            withStyle(style) {
+                                append(char)
+                            }
+                        }
+                    }
                     Text(
-                        message.text,
-                        color = if (message.isFromMe) Color(0xFF0A0A0B) else Color.White,
+                        text = annotatedText,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
@@ -181,8 +219,13 @@ fun ChatBubble(message: MorseMessage, onPlay: () -> Unit) {
             }
 
             if (!message.isFromMe) {
-                IconButton(onClick = onPlay, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                IconButton(onClick = onPlay, modifier = Modifier.size(24.dp), enabled = !isPlaying) {
+                    Icon(
+                        if (isPlaying) Icons.Default.Refresh else Icons.Default.PlayArrow,
+                        contentDescription = "Play",
+                        tint = if (isPlaying) Color(0xFF2DD4BF) else Color.Gray,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
