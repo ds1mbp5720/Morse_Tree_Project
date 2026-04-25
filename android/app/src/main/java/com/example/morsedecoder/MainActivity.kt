@@ -8,8 +8,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Wifi
+import com.example.morsedecoder.data.WifiChatRepositoryImpl
+import com.example.morsedecoder.presentation.ChatViewModel
+import com.example.morsedecoder.ui.WifiChatScreen
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +24,9 @@ import com.example.morsedecoder.ui.EncoderScreen
 import com.example.morsedecoder.audio.MorseToneGenerator
 
 class MainActivity : ComponentActivity() {
+    private val chatRepository by lazy { WifiChatRepositoryImpl(applicationContext) }
+    private val chatViewModel by lazy { ChatViewModel(chatRepository) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -60,17 +65,26 @@ class MainActivity : ComponentActivity() {
                                 label = { Text("Encoder") },
                                 colors = navColors
                             )
+                            NavigationBarItem(
+                                selected = selectedTab == 2,
+                                onClick = { selectedTab = 2 },
+                                icon = { Icon(Icons.Default.Wifi, contentDescription = "Wifi Chat") },
+                                label = { Text("Wifi Chat") },
+                                colors = navColors
+                            )
                         }
                     }
                 ) { innerPadding ->
                     Box(modifier = androidx.compose.ui.Modifier.padding(innerPadding)) {
                         if (selectedTab == 0) {
                             MorseScreen(this@MainActivity)
-                        } else {
+                        } else if (selectedTab == 1) {
                             EncoderScreen(
                                 toneGenerator = toneGenerator,
                                 animateVibrate = { ms -> vibrator.vibrate(ms) }
                             )
+                        } else {
+                            WifiChatScreen(chatViewModel)
                         }
                     }
                 }
