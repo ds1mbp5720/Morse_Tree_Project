@@ -88,6 +88,9 @@ export default function App() {
   const [lastInputTime, setLastInputTime] = useState<number>(0);
   const [currentSequence, setCurrentSequence] = useState<string>('');
   const [showSettings, setShowSettings] = useState(false);
+  const [activeTab, setActiveTab] = useState<'decoder' | 'encoder'>('decoder');
+  const [inputText, setInputText] = useState('');
+  const [isTransmitting, setIsTransmitting] = useState(false);
   
   // Settings state
   const [settings, setSettings] = useState({
@@ -136,6 +139,42 @@ export default function App() {
     if (settings.vibration && navigator.vibrate) {
       navigator.vibrate(ms);
     }
+  };
+
+  const textToMorse = (text: string) => {
+    const map: { [key: string]: string } = {
+      'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+      'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+      'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+      'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+      'Y': '-.--', 'Z': '--..', ' ': '/'
+    };
+    return text.toUpperCase().split('').map(c => map[c] || '').join(' ');
+  };
+
+  const playMorseSequence = async (morse: string) => {
+    if (isTransmitting) return;
+    setIsTransmitting(true);
+    const unit = 100; // ms
+    const parts = morse.split('');
+
+    for (const p of parts) {
+      if (p === '.') {
+        startTone(); triggerVibration(unit);
+        await new Promise(r => setTimeout(r, unit));
+        stopTone();
+      } else if (p === '-') {
+        startTone(); triggerVibration(unit * 3);
+        await new Promise(r => setTimeout(r, unit * 3));
+        stopTone();
+      } else if (p === ' ') {
+        await new Promise(r => setTimeout(r, unit * 3));
+      } else if (p === '/') {
+        await new Promise(r => setTimeout(r, unit * 7));
+      }
+      await new Promise(r => setTimeout(r, unit)); // Gap between elements
+    }
+    setIsTransmitting(false);
   };
 
   const resetToRoot = useCallback(() => {
@@ -204,10 +243,29 @@ export default function App() {
       <header className="h-20 border-b border-[#2DD4BF]/20 flex items-center justify-between px-6 md:px-10 bg-[#0F172A]/80 backdrop-blur-md z-10">
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 rounded-full bg-[#2DD4BF] shadow-[0_0_10px_#2DD4BF]"></div>
-          <h1 className="text-lg md:text-xl font-bold tracking-widest text-white uppercase">
-            Signal Processor <span className="text-[#2DD4BF] font-mono opacity-60">v.2.4</span>
+          <h1 className="text-lg md:text-xl font-bold tracking-widest text-white uppercase italic">
+            Morse <span className="text-[#2DD4BF] font-mono not-italic">Labs</span>
           </h1>
         </div>
+
+        {/* Navigation Tabs */}
+        <nav className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+          {[
+            { id: 'decoder', label: 'Decoder', icon: Terminal },
+            { id: 'encoder', label: 'Encoder', icon: Share2 },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                activeTab === tab.id ? 'bg-[#2DD4BF] text-black shadow-lg shadow-[#2DD4BF]/20' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <tab.icon className="w-3 h-3" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
         
         <div className="flex items-center gap-3">
            <button 
@@ -286,175 +344,239 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col lg:flex-row p-4 md:p-8 gap-6 md:gap-10 z-10 overflow-hidden">
+      <main className="flex-1 flex flex-col p-4 md:p-8 gap-6 z-10 overflow-hidden">
         
-        {/* Left Section: Tree Visualization */}
-        <section className="flex-[1.2] flex flex-col gap-6">
-          <div className="flex-1 bg-[#111827] rounded-2xl border border-[#2DD4BF]/10 p-6 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
-            <div className="absolute top-4 left-6 font-mono text-[10px] text-[#2DD4BF]/40 uppercase tracking-widest">
-              Dichotomous Logic Path // TREE_ROOT_α
-            </div>
-            
-            <svg className="w-full flex-1 min-h-[400px]" viewBox="-250 0 500 500" preserveAspectRatio="xMidYMin meet">
-              <defs>
-                <filter id="glow-teal">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
-              </defs>
-              {
-                // Updated renderNode logic with theme colors
-                (function renderThemedNode(node: MorseNode, x: number, y: number, level: number, pX: number, pY: number) {
-                  const isActive = currentNode?.id === node.id;
-                  const isRoot = node.id === 'root';
-                  const yStep = 60;
-                  const xStep = Math.max(160 / (level + 1), 30);
+        {activeTab === 'decoder' ? (
+          <div className="flex-1 flex flex-col lg:flex-row gap-6 md:gap-10">
+            {/* Left Section: Tree Visualization */}
+            <section className="flex-[1.2] flex flex-col gap-6">
+              <div className="flex-1 bg-[#111827] rounded-2xl border border-[#2DD4BF]/10 p-6 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+                <div className="absolute top-4 left-6 font-mono text-[10px] text-[#2DD4BF]/40 uppercase tracking-widest">
+                  Dichotomous Logic Path // TREE_ROOT_α
+                </div>
+                
+                <svg className="w-full flex-1 min-h-[400px]" viewBox="-250 0 500 500" preserveAspectRatio="xMidYMin meet">
+                  <defs>
+                    <filter id="glow-teal">
+                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  {
+                    // Updated renderNode logic with theme colors
+                    (function renderThemedNode(node: MorseNode, x: number, y: number, level: number, pX: number, pY: number) {
+                      const isActive = currentNode?.id === node.id;
+                      const isRoot = node.id === 'root';
+                      const yStep = 60;
+                      const xStep = Math.max(160 / (level + 1), 30);
 
-                  return (
-                    <React.Fragment key={node.id}>
-                      {!isRoot && (
-                        <line
-                          x1={pX} y1={pY} x2={x} y2={y}
-                          stroke={isActive ? '#2DD4BF' : '#1F2937'}
-                          strokeWidth={isActive ? "3" : "1.5"}
-                          className="transition-all duration-300"
-                        />
-                      )}
-                      <g transform={`translate(${x}, ${y})`}>
-                        <motion.circle
-                          r={isRoot ? 12 : 10}
-                          fill={isActive ? '#2DD4BF' : '#0F172A'}
-                          stroke={isActive ? '#2DD4BF' : '#374151'}
-                          strokeWidth="2"
-                          animate={{
-                            scale: isActive ? 1.4 : 1,
-                            filter: isActive ? 'url(#glow-teal)' : 'none'
-                          }}
-                        />
-                        <text
-                          y={isRoot ? -24 : 5}
-                          x={level % 2 === 0 ? 18 : -18}
-                          textAnchor={level % 2 === 0 ? "start" : "end"}
-                          className="text-[10px] font-mono fill-[#94A3B8] pointer-events-none"
-                          style={{ fill: isActive ? '#fff' : undefined, fontWeight: isActive ? '900' : 'normal' }}
-                        >
-                          {node.char}
-                        </text>
-                      </g>
-                      {node.dot && renderThemedNode(node.dot, x + xStep, y + yStep, level + 1, x, y)}
-                      {node.dash && renderThemedNode(node.dash, x - xStep, y + yStep, level + 1, x, y)}
-                    </React.Fragment>
-                  );
-                })(MORSE_TREE, 0, 40, 0, 0, 40)
-              }
-            </svg>
-          </div>
-
-          {/* Decoded Output Bar */}
-          <div className="h-28 bg-[#0F172A] border border-[#2DD4BF]/30 rounded-2xl flex items-center justify-between px-6 md:px-10 gap-4 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
-            <div className="flex items-center gap-3">
-              <Terminal className="w-5 h-5 text-[#2DD4BF]" />
-              <div className="text-xl md:text-3xl font-mono font-bold text-white tracking-widest truncate max-w-[200px] md:max-w-md">
-                {currentSequence || '....'}
+                      return (
+                        <React.Fragment key={node.id}>
+                          {!isRoot && (
+                            <line
+                              x1={pX} y1={pY} x2={x} y2={y}
+                              stroke={isActive ? '#2DD4BF' : '#1F2937'}
+                              strokeWidth={isActive ? "3" : "1.5"}
+                              className="transition-all duration-300"
+                            />
+                          )}
+                          <g transform={`translate(${x}, ${y})`}>
+                            <motion.circle
+                              r={isRoot ? 12 : 10}
+                              fill={isActive ? '#2DD4BF' : '#0F172A'}
+                              stroke={isActive ? '#2DD4BF' : '#374151'}
+                              strokeWidth="2"
+                              animate={{
+                                scale: isActive ? 1.4 : 1,
+                                filter: isActive ? 'url(#glow-teal)' : 'none'
+                              }}
+                            />
+                            <text
+                              y={isRoot ? -24 : 5}
+                              x={level % 2 === 0 ? 18 : -18}
+                              textAnchor={level % 2 === 0 ? "start" : "end"}
+                              className="text-[10px] font-mono fill-[#94A3B8] pointer-events-none"
+                              style={{ fill: isActive ? '#fff' : undefined, fontWeight: isActive ? '900' : 'normal' }}
+                            >
+                              {node.char}
+                            </text>
+                          </g>
+                          {node.dot && renderThemedNode(node.dot, x + xStep, y + yStep, level + 1, x, y)}
+                          {node.dash && renderThemedNode(node.dash, x - xStep, y + yStep, level + 1, x, y)}
+                        </React.Fragment>
+                      );
+                    })(MORSE_TREE, 0, 40, 0, 0, 40)
+                  }
+                </svg>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-[10px] text-[#94A3B8] uppercase font-mono mb-1">State Decoded</div>
-                <div className="bg-[#2DD4BF]/10 px-6 py-2 rounded-xl border border-[#2DD4BF]/20">
-                  <span className="text-3xl font-black text-white font-mono">
-                    {currentNode?.char && currentNode !== MORSE_TREE ? currentNode.char : '_'}
-                  </span>
+
+              {/* Decoded Output Bar */}
+              <div className="h-28 bg-[#0F172A] border border-[#2DD4BF]/30 rounded-2xl flex items-center justify-between px-6 md:px-10 gap-4 overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
+                <div className="flex items-center gap-3">
+                  <Terminal className="w-5 h-5 text-[#2DD4BF]" />
+                  <div className="text-xl md:text-3xl font-mono font-bold text-white tracking-widest truncate max-w-[200px] md:max-w-md">
+                    {currentSequence || '....'}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-[10px] text-[#94A3B8] uppercase font-mono mb-1">State Decoded</div>
+                    <div className="bg-[#2DD4BF]/10 px-6 py-2 rounded-xl border border-[#2DD4BF]/20">
+                      <span className="text-3xl font-black text-white font-mono">
+                        {currentNode?.char && currentNode !== MORSE_TREE ? currentNode.char : '_'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        {/* Right Section: Library & Input */}
-        <section className="flex-1 flex flex-col gap-6">
-          <div className="flex-1 bg-[#111827] rounded-2xl border border-white/5 p-6 flex flex-col shrink-0">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest">Transmitted Archive</h3>
-              <div className="flex gap-2">
-                <button onClick={backspaceMessage} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-[#94A3B8]">
-                  <Delete className="w-4 h-4" />
-                </button>
-                <button onClick={clearMessage} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-[#94A3B8]">
-                  <Hash className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+            {/* Right Section: Library & Input */}
+            <section className="flex-1 flex flex-col gap-6">
+              <div className="flex-1 bg-[#111827] rounded-2xl border border-white/5 p-6 flex flex-col shrink-0">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xs font-bold text-[#94A3B8] uppercase tracking-widest">Transmitted Archive</h3>
+                  <div className="flex gap-2">
+                    <button onClick={backspaceMessage} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-[#94A3B8]">
+                      <Delete className="w-4 h-4" />
+                    </button>
+                    <button onClick={clearMessage} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-[#94A3B8]">
+                      <Hash className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-            <div className="flex-1 min-h-[120px] bg-[#0A0A0B] rounded-xl border-l-2 border-[#2DD4BF] p-4 flex flex-col">
-              <div className="text-2xl md:text-4xl font-mono font-black text-white break-all flex-1">
-                {message || <span className="opacity-10">NULL_STREAM</span>}
-                <motion.span 
-                  animate={{ opacity: [1, 0.2] }} 
-                  transition={{ duration: 0.5, repeat: Infinity, ease: 'steps(2)' }}
-                  className="inline-block w-3 bg-[#2DD4BF] ml-1 h-[2rem] translate-y-1 shadow-[0_0_10px_#2DD4BF]"
-                />
-              </div>
-              <div className="mt-4 flex justify-between items-center">
-                <span className="text-[10px] text-[#2DD4BF] font-mono tracking-widest uppercase">Encryption: AES-256</span>
-                <span className="text-[10px] text-[#94A3B8] font-mono">ID: {Math.random().toString(16).slice(2, 8).toUpperCase()}</span>
-              </div>
-            </div>
+                <div className="flex-1 min-h-[120px] bg-[#0A0A0B] rounded-xl border-l-2 border-[#2DD4BF] p-4 flex flex-col">
+                  <div className="text-2xl md:text-4xl font-mono font-black text-white break-all flex-1">
+                    {message || <span className="opacity-10">NULL_STREAM</span>}
+                    <motion.span 
+                      animate={{ opacity: [1, 0.2] }} 
+                      transition={{ duration: 0.5, repeat: Infinity, ease: 'steps(2)' }}
+                      className="inline-block w-3 bg-[#2DD4BF] ml-1 h-[2rem] translate-y-1 shadow-[0_0_10px_#2DD4BF]"
+                    />
+                  </div>
+                  <div className="mt-4 flex justify-between items-center">
+                    <span className="text-[10px] text-[#2DD4BF] font-mono tracking-widest uppercase">Protocol: Receiver</span>
+                    <span className="text-[10px] text-[#94A3B8] font-mono">STATUS: SYNCED</span>
+                  </div>
+                </div>
 
-            <div className="mt-6 flex flex-col gap-2">
-               <div className="flex justify-between items-center px-1">
-                  <span className="text-[10px] text-[#94A3B8] font-mono uppercase">System Pulse</span>
-                  <span className={`text-[10px] font-mono ${isPressing ? 'text-[#2DD4BF]' : 'text-slate-600'}`}>
-                    {isPressing ? 'ACTIVE_TRANSMISSION' : 'WAITING_SYNC'}
-                  </span>
-               </div>
-               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div 
-                    animate={{ width: isPressing ? '100%' : '0%' }}
-                    className="h-full bg-[#2DD4BF] shadow-[0_0_10px_#2DD4BF]"
-                  />
-               </div>
-            </div>
-          </div>
-
-          {/* Pulse Pad Section */}
-          <div className="h-64 bg-[#111827] rounded-3xl border border-[#2DD4BF]/10 p-8 flex flex-col items-center justify-center relative overflow-hidden group shadow-2xl">
-            <div className="absolute top-4 left-6 font-mono text-[10px] text-[#2DD4BF]/40">INPUT TERMINAL // CONTACT_PAD_01</div>
-            
-            <motion.div 
-              onMouseDown={handlePressStart}
-              onMouseUp={handlePressEnd}
-              onMouseLeave={() => isPressing && handlePressEnd()}
-              onTouchStart={handlePressStart}
-              onTouchEnd={handlePressEnd}
-              whileTap={{ scale: 0.95 }}
-              className={`w-44 h-44 rounded-full border-4 flex items-center justify-center relative transition-all duration-300 cursor-pointer shadow-[0_0_50px_rgba(45,212,191,0.05)] ${isPressing ? 'border-[#2DD4BF] scale-105' : 'border-[#2DD4BF]/20 hover:border-[#2DD4BF]/60'}`}
-            >
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#2DD4BF]/40 flex flex-col items-center justify-center text-center p-6 shadow-inner">
-                <span className={`text-xs font-bold mb-2 uppercase tracking-widest transition-colors ${isPressing ? 'text-white' : 'text-[#2DD4BF]'}`}>Tap / Hold</span>
-                <p className="text-[10px] text-[#94A3B8] leading-tight font-mono">. : SHORT<br/>- : LONG</p>
-              </div>
-              
-              <div className={`absolute -bottom-4 px-3 py-1 text-[#0A0A0B] text-[10px] font-black uppercase tracking-widest transition-all ${isPressing ? 'bg-white scale-110' : 'bg-[#2DD4BF]'}`}>
-                Manual Input
+                <div className="mt-6 flex flex-col gap-2">
+                  <div className="flex justify-between items-center px-1">
+                      <span className="text-[10px] text-[#94A3B8] font-mono uppercase">System Pulse</span>
+                      <span className={`text-[10px] font-mono ${isPressing ? 'text-[#2DD4BF]' : 'text-slate-600'}`}>
+                        {isPressing ? 'ACTIVE_TRANSMISSION' : 'WAITING_SYNC'}
+                      </span>
+                  </div>
+                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                      <motion.div 
+                        animate={{ width: isPressing ? '100%' : '0%' }}
+                        className="h-full bg-[#2DD4BF] shadow-[0_0_10px_#2DD4BF]"
+                      />
+                  </div>
+                </div>
               </div>
 
-              {/* Glowing ripple effect on press */}
-              {isPressing && (
+              {/* Pulse Pad Section */}
+              <div className="h-64 bg-[#111827] rounded-3xl border border-[#2DD4BF]/10 p-4 flex flex-col items-center justify-center relative overflow-hidden group shadow-2xl">
+                <div className="absolute top-4 left-6 font-mono text-[10px] text-[#2DD4BF]/40">INPUT TERMINAL // CONTACT_PAD_01</div>
+                
                 <motion.div 
-                  initial={{ scale: 0.8, opacity: 0.5 }}
-                  animate={{ scale: 1.5, opacity: 0 }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                  className="absolute inset-0 rounded-full border border-[#2DD4BF] pointer-events-none"
-                />
-              )}
-            </motion.div>
+                  onMouseDown={handlePressStart}
+                  onMouseUp={handlePressEnd}
+                  onMouseLeave={() => isPressing && handlePressEnd()}
+                  onTouchStart={handlePressStart}
+                  onTouchEnd={handlePressEnd}
+                  whileTap={{ scale: 0.95 }}
+                  className={`w-40 h-40 rounded-full border-4 flex items-center justify-center relative transition-all duration-300 cursor-pointer shadow-[0_0_50px_rgba(45,212,191,0.05)] ${isPressing ? 'border-[#2DD4BF] scale-105' : 'border-[#2DD4BF]/20 hover:border-[#2DD4BF]/60'}`}
+                >
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#1F2937] to-[#111827] border border-[#2DD4BF]/40 flex flex-col items-center justify-center text-center p-6 shadow-inner">
+                    <span className={`text-xs font-bold mb-1 uppercase tracking-widest transition-colors ${isPressing ? 'text-white' : 'text-[#2DD4BF]'}`}>Input</span>
+                    <p className="text-[9px] text-[#94A3B8] leading-tight font-mono">TAP/HOLD</p>
+                  </div>
+                  {isPressing && (
+                    <motion.div 
+                      initial={{ scale: 0.8, opacity: 0.5 }}
+                      animate={{ scale: 1.5, opacity: 0 }}
+                      transition={{ duration: 1, repeat: Infinity }}
+                      className="absolute inset-0 rounded-full border border-[#2DD4BF] pointer-events-none"
+                    />
+                  )}
+                </motion.div>
+              </div>
+            </section>
           </div>
-        </section>
+        ) : (
+          <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full gap-6">
+             <div className="bg-[#111827] rounded-2xl border border-[#2DD4BF]/10 p-8 shadow-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                   <div className="w-10 h-10 rounded-lg bg-[#2DD4BF]/10 flex items-center justify-center">
+                      <Share2 className="w-5 h-5 text-[#2DD4BF]" />
+                   </div>
+                   <h2 className="text-xl font-bold text-white tracking-widest uppercase">Encoder Console</h2>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-[10px] text-[#94A3B8] uppercase tracking-widest block mb-2 font-bold">Input Text</label>
+                    <input 
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder="Type message..."
+                      className="w-full bg-[#0A0A0B] border border-white/10 rounded-xl px-4 py-4 text-white font-mono focus:border-[#2DD4BF] focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="bg-black/50 p-6 rounded-xl border border-white/5 min-h-[120px]">
+                    <label className="text-[10px] text-[#2DD4BF] uppercase tracking-widest block mb-4 font-bold">Encoded Signal</label>
+                    <div className="text-2xl font-mono text-emerald-400 break-all leading-relaxed">
+                      {textToMorse(inputText) || 'SIGNAL_PENDING...'}
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => playMorseSequence(textToMorse(inputText))}
+                    disabled={isTransmitting || !inputText.trim()}
+                    className={`w-full py-6 rounded-2xl font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${
+                      isTransmitting || !inputText.trim() 
+                      ? 'bg-slate-800 text-slate-600 grayscale' 
+                      : 'bg-gradient-to-r from-[#2DD4BF] to-teal-600 text-black shadow-lg shadow-[#2DD4BF]/20 hover:scale-[1.02]'
+                    }`}
+                  >
+                    {isTransmitting ? (
+                      <motion.div 
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        className="w-5 h-5 border-4 border-black/20 border-t-black rounded-full"
+                      />
+                    ) : 'Transmit Sequence'}
+                  </button>
+                </div>
+             </div>
+
+             <div className="p-6 bg-[#0F172A] border border-[#2DD4BF]/10 rounded-2xl flex items-center justify-between">
+                <div>
+                   <span className="text-[10px] text-[#94A3B8] uppercase block mb-1">Buffer Status</span>
+                   <span className="text-sm font-bold text-white font-mono">OK // STANDBY</span>
+                </div>
+                <div className="flex gap-2">
+                   {[1,2,3,4].map(i => (
+                     <motion.div 
+                       key={i}
+                       animate={{ opacity: [0.2, 1, 0.2] }}
+                       transition={{ duration: 1, delay: i * 0.2, repeat: Infinity }}
+                       className="w-1.5 h-6 bg-[#2DD4BF] rounded-full"
+                     />
+                   ))}
+                </div>
+             </div>
+          </div>
+        )}
       </main>
 
       {/* Footer Info */}
