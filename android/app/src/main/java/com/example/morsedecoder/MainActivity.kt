@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.os.Vibrator
 import android.content.Context
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
@@ -33,8 +33,34 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             var selectedTab by remember { mutableStateOf(0) }
+            var showExitDialog by remember { mutableStateOf(false) }
             val toneGenerator = remember { MorseToneGenerator() }
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+
+            BackHandler {
+                showExitDialog = true
+            }
+
+            if (showExitDialog) {
+                AlertDialog(
+                    onDismissRequest = { showExitDialog = false },
+                    title = { Text("Exit App") },
+                    text = { Text("Are you sure you want to exit the application?") },
+                    confirmButton = {
+                        TextButton(onClick = { finish() }) {
+                            Text("OK", color = Color(0xFF2DD4BF))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showExitDialog = false }) {
+                            Text("Cancel", color = Color.Gray)
+                        }
+                    },
+                    containerColor = Color(0xFF1F2937),
+                    titleContentColor = Color.White,
+                    textContentColor = Color.LightGray
+                )
+            }
 
             MaterialTheme(
                 colorScheme = darkColorScheme(
