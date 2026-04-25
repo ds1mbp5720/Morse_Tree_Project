@@ -47,8 +47,8 @@ fun MorseTreeVisualizer(
             val textColor = if (isActive) Color.White else Color(0xFF94A3B8)
             
             // Draw lines to children first
-            if (level < 4) {
-                val nextXStep = baseStepX / Math.pow(2.0, level.toDouble()).toFloat()
+            if (level < 6) {
+                val nextXStep = baseStepX / Math.pow(2.4, level.toDouble()).toFloat()
                 
                 // Left child (.)
                 drawLine(

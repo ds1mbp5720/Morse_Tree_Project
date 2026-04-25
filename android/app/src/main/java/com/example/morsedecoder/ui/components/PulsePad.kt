@@ -27,7 +27,7 @@ fun PulsePad(
 
     Box(
         modifier = modifier
-            .size(160.dp)
+            .size(130.dp) // Reduced from 160.dp
             .background(Color(0xFF1F2937), CircleShape)
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -44,14 +44,14 @@ fun PulsePad(
     ) {
         Box(
             modifier = Modifier
-                .size(110.dp)
+                .size(90.dp) // Reduced from 110.dp
                 .background(if (isPressing) Color(0xFF2DD4BF) else Color(0xFF374151), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 if (isPressing) "SIGNAL" else "READY",
                 color = Color.White,
-                fontSize = 18.sp,
+                fontSize = 15.sp, // Reduced font size
                 fontWeight = FontWeight.Black
             )
         }
