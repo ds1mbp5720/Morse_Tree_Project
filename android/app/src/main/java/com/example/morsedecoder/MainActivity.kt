@@ -5,6 +5,7 @@ import android.os.Vibrator
 import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
@@ -19,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.*
+import com.example.morsedecoder.ui.components.ExitDialog
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.example.morsedecoder.ui.MorseScreen
@@ -42,23 +44,9 @@ class MainActivity : ComponentActivity() {
             }
 
             if (showExitDialog) {
-                AlertDialog(
-                    onDismissRequest = { showExitDialog = false },
-                    title = { Text("Exit App") },
-                    text = { Text("Are you sure you want to exit the application?") },
-                    confirmButton = {
-                        TextButton(onClick = { finish() }) {
-                            Text("OK", color = Color(0xFF2DD4BF))
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showExitDialog = false }) {
-                            Text("Cancel", color = Color.Gray)
-                        }
-                    },
-                    containerColor = Color(0xFF1F2937),
-                    titleContentColor = Color.White,
-                    textContentColor = Color.LightGray
+                ExitDialog(
+                    onConfirm = { finish() },
+                    onDismiss = { showExitDialog = false }
                 )
             }
 
@@ -103,7 +91,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    Box(modifier = androidx.compose.ui.Modifier.padding(innerPadding)) {
+                    Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                         if (selectedTab == 0) {
                             MorseScreen(this@MainActivity)
                         } else if (selectedTab == 1) {
