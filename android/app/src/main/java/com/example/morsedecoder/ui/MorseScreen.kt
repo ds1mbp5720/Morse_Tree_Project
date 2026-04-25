@@ -230,8 +230,8 @@ fun MorseScreen(context: Context) {
 
     LaunchedEffect(lastInputTime, currentSequence) {
         if (lastInputTime > 0 && currentSequence.isEmpty()) {
-            delay(1000)
-            if (System.currentTimeMillis() - lastInputTime >= 1000 && message.isNotEmpty() && !message.endsWith(" ")) {
+            delay(2000)
+            if (System.currentTimeMillis() - lastInputTime >= 2000 && message.isNotEmpty() && !message.endsWith(" ")) {
                 message += " "
             }
         }
