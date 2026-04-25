@@ -17,7 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.clip.clip
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -40,8 +40,8 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
     var inputText by remember { mutableStateOf("") }
     var currentMorseBuffer by remember { mutableStateOf("") }
-    var lastTapTime by remember { mutableLongStateOf(0L) }
-    var pressStartTime by remember { mutableLongStateOf(0L) }
+    var lastTapTime by remember { mutableStateOf(0L) }
+    var pressStartTime by remember { mutableStateOf(0L) }
     
     val morseReverseMap = mapOf(
         ".-" to "A", "-..." to "B", "-.-." to "C", "-.." to "D", "." to "E", "..-." to "F",
@@ -216,7 +216,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 .background(Color(0xFF1F2937))
                 .pointerInput(Unit) {
                     detectTapGestures(
-                        onPress = {
+                        onPress = { offset ->
                             pressStartTime = System.currentTimeMillis()
                             toneGenerator.start()
                             vibrator.vibrate(50)
