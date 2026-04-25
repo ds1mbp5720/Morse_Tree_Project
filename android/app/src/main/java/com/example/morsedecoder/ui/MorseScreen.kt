@@ -147,7 +147,13 @@ fun MorseScreen(context: Context) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = { if (message.isNotEmpty()) message = message.dropLast(1) }) {
+            TextButton(onClick = { 
+                if (currentSequence.isNotEmpty()) {
+                    currentSequence = ""
+                } else if (message.isNotEmpty()) {
+                    message = message.dropLast(1)
+                }
+            }) {
                 Text("BACKSPACE", color = Color.Gray)
             }
 
@@ -167,21 +173,37 @@ fun MorseScreen(context: Context) {
                 Text("PLAYBACK", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
-            TextButton(onClick = { message = "" }) {
+            TextButton(onClick = { 
+                message = ""
+                currentSequence = ""
+            }) {
                 Text("CLEAR_ALL", color = Color(0xFFEF4444))
             }
         }
     }
 
-    // Auto-decode Logic
+    // Auto-decode & Space Logic
+    var lastInputTime by remember { mutableStateOf(0L) }
     LaunchedEffect(currentSequence) {
         if (currentSequence.isNotEmpty()) {
+            lastInputTime = System.currentTimeMillis()
             delay(1200) // Wait for user to stop typing
-            val char = MorseDictionary.decodeChar(currentSequence)
-            if (char != "?") {
-                message += char
+            if (System.currentTimeMillis() - lastInputTime >= 1200) {
+                val char = MorseDictionary.decodeChar(currentSequence)
+                if (char != "?") {
+                    message += char
+                }
+                currentSequence = ""
             }
-            currentSequence = ""
+        }
+    }
+
+    LaunchedEffect(lastInputTime) {
+        if (lastInputTime > 0 && currentSequence.isEmpty()) {
+            delay(2000)
+            if (System.currentTimeMillis() - lastInputTime >= 2000 && message.isNotEmpty() && !message.endsWith(" ")) {
+                message += " "
+            }
         }
     }
 }

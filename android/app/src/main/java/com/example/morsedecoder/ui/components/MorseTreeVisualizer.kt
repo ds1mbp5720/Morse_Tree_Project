@@ -89,7 +89,7 @@ fun MorseTreeVisualizer(
                     y - 25f,
                     paint.apply {
                         color = textColor.hashCode()
-                        textSize = (if (isActive) 19.sp else 15.sp).toPx()
+                        textSize = (if (isActive) 19.sp else 14.sp).toPx()
                     }
                 )
             } else if (char == "START") {
@@ -135,13 +135,30 @@ fun MorseTreeVisualizer(
                 "-.--" -> "Y"
                 "--.." -> "Z"
                 "--.-" -> "Q"
+                // Numbers (Level 5)
+                "-----" -> "0"
+                ".----" -> "1"
+                "..---" -> "2"
+                "...--" -> "3"
+                "....-" -> "4"
+                "....." -> "5"
+                "-...." -> "6"
+                "--..." -> "7"
+                "---.." -> "8"
+                "----." -> "9"
+                // Special characters (Level 6)
+                ".-.-.-" -> "."
+                "--..--" -> ","
+                "..--.." -> "?"
+                "-.-.--" -> "!"
+                "-..-." -> "/"
                 else -> " "
             }
             
             drawMorseNode(char, path, x, y, level)
             
-            if (level < 4) {
-                val nextXStep = baseStepX / Math.pow(2.0, level.toDouble()).toFloat()
+            if (level < 6) {
+                val nextXStep = baseStepX / Math.pow(2.4, level.toDouble()).toFloat()
                 render(x - nextXStep, y + stepY, path + ".", level + 1)
                 render(x + nextXStep, y + stepY, path + "-", level + 1)
             }
