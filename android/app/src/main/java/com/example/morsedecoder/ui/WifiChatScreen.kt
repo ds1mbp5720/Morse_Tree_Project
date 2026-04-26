@@ -309,27 +309,39 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Morse Pulse Pad for Wifi Chat
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Sequence Display Bar
-            if (currentMorseBuffer.isNotEmpty()) {
-                Box(
+            // Sequence Display Bar - Always visible
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 12.dp)
+                    .height(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
                     modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .height(32.dp),
-                    contentAlignment = Alignment.Center
+                        .background(
+                            if (currentMorseBuffer.isNotEmpty()) Color(0xFF1F2937) else Color.Transparent,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .background(Color(0xFF1F2937), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    if (currentMorseBuffer.isEmpty()) {
+                        Text(
+                            "READY",
+                            color = Color.DarkGray,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 2.sp
+                        )
+                    } else {
                         Text(
                             currentMorseBuffer,
                             color = Color(0xFF2DD4BF),
