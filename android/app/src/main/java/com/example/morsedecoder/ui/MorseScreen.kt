@@ -55,8 +55,15 @@ fun MorseScreen(context: Context) {
                 if (code.isNotEmpty()) {
                     for (symbol in code) {
                         toneGenerator.start()
-                        val duration = if (symbol == '.') unit else unit * 3
-                        vibrator.vibrate(duration)
+                        val isDash = symbol == '-'
+                        val duration = if (isDash) unit * 3 else unit
+                        
+                        if (isDash) {
+                            vibrator.vibrate(longArrayOf(0, duration), -1)
+                        } else {
+                            vibrator.vibrate(duration)
+                        }
+                        
                         delay(duration)
                         toneGenerator.stop()
                         delay(unit) // Inter-element gap
@@ -142,7 +149,7 @@ fun MorseScreen(context: Context) {
             onPressStart = {
                 isPressing = true
                 toneGenerator.start()
-                vibrator.vibrate(30)
+                vibrator.vibrate(20) // Initial tactile click
             },
             onPressEnd = { duration ->
                 isPressing = false
@@ -150,6 +157,15 @@ fun MorseScreen(context: Context) {
                 if (duration < 250) currentSequence += "." else currentSequence += "-"
             }
         )
+
+        LaunchedEffect(isPressing) {
+            if (isPressing) {
+                delay(250)
+                if (isPressing) {
+                    vibrator.vibrate(40) // Threshold kick to signal "Dash" is reached
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 

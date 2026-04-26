@@ -96,8 +96,15 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             } else {
                 for (symbol in part) {
                     toneGenerator.start()
-                    val duration = if (symbol == '.') unit else unit * 3
-                    vibrator.vibrate(duration)
+                    val isDash = symbol == '-'
+                    val duration = if (isDash) unit * 3 else unit
+                    
+                    if (isDash) {
+                        vibrator.vibrate(longArrayOf(0, duration), -1)
+                    } else {
+                        vibrator.vibrate(duration)
+                    }
+                    
                     delay(duration)
                     toneGenerator.stop()
                     delay(unit)
@@ -314,7 +321,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 onPressStart = {
                     isPressingPad = true
                     toneGenerator.start()
-                    vibrator.vibrate(50)
+                    vibrator.vibrate(20)
                 },
                 onPressEnd = { duration ->
                     isPressingPad = false
@@ -324,6 +331,15 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                     lastTapTime = System.currentTimeMillis()
                 }
             )
+
+            LaunchedEffect(isPressingPad) {
+                if (isPressingPad) {
+                    delay(200)
+                    if (isPressingPad) {
+                        vibrator.vibrate(40) // Dash threshold reach feedback
+                    }
+                }
+            }
         }
     }
 }
