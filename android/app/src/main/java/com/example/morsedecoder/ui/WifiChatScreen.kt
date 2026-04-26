@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Vibrator
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -380,6 +381,21 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     }
 }
 
+fun getSenderColor(sender: String): Color {
+    if (sender == "Me" || sender.isEmpty()) return Color(0xFF2DD4BF)
+    val colors = listOf(
+        Color(0xFFF472B6), // Pink
+        Color(0xFF60A5FA), // Blue
+        Color(0xFFFB923C), // Orange
+        Color(0xFFA78BFA), // Violet
+        Color(0xFFFACC15), // Yellow
+        Color(0xFF4ADE80), // Green
+        Color(0xFFF87171)  // Red
+    )
+    val index = (sender.hashCode().let { if (it == Int.MIN_VALUE) 0 else Math.abs(it) }) % colors.size
+    return colors[index]
+}
+
 @Composable
 fun ChatBubble(
     message: MorseMessage,
@@ -388,6 +404,8 @@ fun ChatBubble(
     isTextVisible: Boolean,
     onPlay: () -> Unit
 ) {
+    val senderColor = remember(message.sender) { getSenderColor(message.sender) }
+    
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -396,9 +414,11 @@ fun ChatBubble(
     ) {
         Text(
             message.sender,
-            color = Color.Gray,
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace
+            color = if (message.isFromMe) Color.Gray else senderColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.padding(bottom = 2.dp)
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -419,8 +439,12 @@ fun ChatBubble(
             Box(
                 modifier = Modifier
                     .background(
-                        if (message.isFromMe) Color(0xFF2DD4BF) else Color(0xFF374151),
+                        if (message.isFromMe) Color(0xFF2DD4BF) else senderColor.copy(alpha = 0.1f),
                         RoundedCornerShape(12.dp)
+                    )
+                    .then(
+                        if (!message.isFromMe) Modifier.border(1.dp, senderColor, RoundedCornerShape(12.dp))
+                        else Modifier
                     )
                     .padding(12.dp)
             ) {
@@ -433,7 +457,7 @@ fun ChatBubble(
                             textParts.forEachIndexed { index, part ->
                                 val style = if (isPlaying && index == playingIndex) {
                                     SpanStyle(
-                                        color = if (message.isFromMe) Color.White else Color(0xFF2DD4BF),
+                                        color = if (message.isFromMe) Color.White else senderColor,
                                         fontWeight = FontWeight.Black,
                                         background = if (message.isFromMe) Color.Black.copy(alpha = 0.2f) else Color.Transparent
                                     )
@@ -464,7 +488,7 @@ fun ChatBubble(
                     Icon(
                         if (isPlaying) Icons.Default.Refresh else Icons.Default.PlayArrow,
                         contentDescription = "Play",
-                        tint = if (isPlaying) Color(0xFF2DD4BF) else Color.Gray,
+                        tint = if (isPlaying) senderColor else Color.Gray,
                         modifier = Modifier.size(16.dp)
                     )
                 }
