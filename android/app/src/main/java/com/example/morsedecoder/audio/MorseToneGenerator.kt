@@ -11,6 +11,7 @@ class MorseToneGenerator {
     private var audioTrack: AudioTrack? = null
     private var isPlaying = false
 
+    @Synchronized
     fun start() {
         if (isPlaying) return
         isPlaying = true
@@ -19,7 +20,7 @@ class MorseToneGenerator {
             sampleRate, 
             AudioFormat.CHANNEL_OUT_MONO, 
             AudioFormat.ENCODING_PCM_16BIT
-        )
+        ).coerceAtLeast(2048)
         
         audioTrack = AudioTrack(
             AudioManager.STREAM_MUSIC,
@@ -29,32 +30,34 @@ class MorseToneGenerator {
             bufferSize,
             AudioTrack.MODE_STREAM
         )
-
-        val samples = ShortArray(bufferSize)
-        for (i in samples.indices) {
-            samples[i] = (sin(2.0 * Math.PI * i / (sampleRate / freq)) * Short.MAX_VALUE).toInt().toShort()
-        }
         
         audioTrack?.play()
         
-        // Feed the buffer in a background thread to keep it playing
         Thread {
+            var angle = 0.0
+            val samples = ShortArray(1024)
             while (isPlaying) {
+                for (i in samples.indices) {
+                    samples[i] = (sin(angle) * Short.MAX_VALUE * 0.7).toInt().toShort()
+                    angle += 2.0 * Math.PI * freq / sampleRate
+                    if (angle > 2.0 * Math.PI) angle -= 2.0 * Math.PI
+                }
                 audioTrack?.write(samples, 0, samples.size)
+            }
+            synchronized(this) {
+                try {
+                    audioTrack?.stop()
+                    audioTrack?.release()
+                } catch (e: Exception) {}
+                finally {
+                    audioTrack = null
+                }
             }
         }.start()
     }
 
+    @Synchronized
     fun stop() {
         isPlaying = false
-        try {
-            audioTrack?.stop()
-            audioTrack?.flush()
-            audioTrack?.release()
-        } catch (e: Exception) {
-            // Log error
-        } finally {
-            audioTrack = null
-        }
     }
 }
