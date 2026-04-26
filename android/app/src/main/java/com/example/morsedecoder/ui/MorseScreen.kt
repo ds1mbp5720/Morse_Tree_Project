@@ -149,11 +149,12 @@ fun MorseScreen(context: Context) {
             onPressStart = {
                 isPressing = true
                 toneGenerator.start()
-                vibrator.vibrate(20) // Initial tactile click
+                vibrator.vibrate(longArrayOf(0, 10000), 0) // Vibrate continuously (starts immediately, loops)
             },
             onPressEnd = { duration ->
                 isPressing = false
                 toneGenerator.stop()
+                vibrator.cancel()
                 if (duration < 250) currentSequence += "." else currentSequence += "-"
             }
         )
@@ -162,7 +163,8 @@ fun MorseScreen(context: Context) {
             if (isPressing) {
                 delay(250)
                 if (isPressing) {
-                    vibrator.vibrate(40) // Threshold kick to signal "Dash" is reached
+                    // Provide a slight "pulse" feeling when it becomes a dash
+                    vibrator.vibrate(20) 
                 }
             }
         }

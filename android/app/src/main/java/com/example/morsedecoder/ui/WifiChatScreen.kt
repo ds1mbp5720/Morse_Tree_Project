@@ -355,11 +355,12 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 onPressStart = {
                     isPressingPad = true
                     toneGenerator.start()
-                    vibrator.vibrate(20)
+                    vibrator.vibrate(longArrayOf(0, 10000), 0)
                 },
                 onPressEnd = { duration ->
                     isPressingPad = false
                     toneGenerator.stop()
+                    vibrator.cancel()
                     val symbol = if (duration < 200) "." else "-"
                     currentMorseBuffer += symbol
                     lastTapTime = System.currentTimeMillis()
@@ -370,7 +371,8 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                 if (isPressingPad) {
                     delay(200)
                     if (isPressingPad) {
-                        vibrator.vibrate(40) // Dash threshold reach feedback
+                        // Provide a slight "pulse" feeling when it becomes a dash
+                        vibrator.vibrate(20) 
                     }
                 }
             }

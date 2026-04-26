@@ -9,9 +9,11 @@ class MorseToneGenerator {
     private val sampleRate = 44100
     private val freq = 700.0
     private var audioTrack: AudioTrack? = null
+    private var isPlaying = false
 
     fun start() {
-        if (audioTrack != null) stop()
+        if (isPlaying) return
+        isPlaying = true
         
         val bufferSize = AudioTrack.getMinBufferSize(
             sampleRate, 
@@ -34,12 +36,20 @@ class MorseToneGenerator {
         }
         
         audioTrack?.play()
-        audioTrack?.write(samples, 0, samples.size)
+        
+        // Feed the buffer in a background thread to keep it playing
+        Thread {
+            while (isPlaying) {
+                audioTrack?.write(samples, 0, samples.size)
+            }
+        }.start()
     }
 
     fun stop() {
+        isPlaying = false
         try {
             audioTrack?.stop()
+            audioTrack?.flush()
             audioTrack?.release()
         } catch (e: Exception) {
             // Log error
