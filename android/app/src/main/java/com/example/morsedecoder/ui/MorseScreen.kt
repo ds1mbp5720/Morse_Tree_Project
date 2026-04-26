@@ -45,6 +45,12 @@ fun MorseScreen(context: Context) {
     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     val toneGenerator = remember { MorseToneGenerator() }
 
+    DisposableEffect(Unit) {
+        onDispose {
+            toneGenerator.stop()
+        }
+    }
+
     fun playMessage() {
         if (isPlayingBack || message.isEmpty()) return
         scope.launch {

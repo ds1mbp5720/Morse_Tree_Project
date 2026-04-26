@@ -9,6 +9,7 @@ class MorseToneGenerator {
     private val sampleRate = 44100
     private val freq = 700.0
     private var audioTrack: AudioTrack? = null
+    @Volatile
     private var isPlaying = false
 
     @Synchronized
@@ -58,6 +59,7 @@ class MorseToneGenerator {
 
     @Synchronized
     fun stop() {
+        if (!isPlaying) return
         isPlaying = false
     }
 }

@@ -69,6 +69,12 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
     val toneGenerator = remember { MorseToneGenerator() }
     val scope = rememberCoroutineScope()
 
+    DisposableEffect(Unit) {
+        onDispose {
+            toneGenerator.stop()
+        }
+    }
+
     // Space detection for morse input
     LaunchedEffect(lastTapTime) {
         if (lastTapTime > 0) {

@@ -39,6 +39,12 @@ class MainActivity : ComponentActivity() {
             val toneGenerator = remember { MorseToneGenerator() }
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
+            DisposableEffect(Unit) {
+                onDispose {
+                    toneGenerator.stop()
+                }
+            }
+
             BackHandler {
                 showExitDialog = true
             }
