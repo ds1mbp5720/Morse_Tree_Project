@@ -309,7 +309,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         // Morse Pulse Pad for Wifi Chat
         Column(
@@ -317,13 +317,13 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Sequence Display Bar
-            Box(
-                modifier = Modifier
-                    .padding(bottom = 12.dp)
-                    .height(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (currentMorseBuffer.isNotEmpty()) {
+            if (currentMorseBuffer.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 8.dp)
+                        .height(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Row(
                         modifier = Modifier
                             .background(Color(0xFF1F2937), RoundedCornerShape(8.dp))
