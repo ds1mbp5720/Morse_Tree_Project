@@ -3,6 +3,7 @@ package com.example.morsedecoder.data
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import android.net.wifi.WifiManager
 import android.util.Log
 import com.example.morsedecoder.domain.model.MorseMessage
 import com.example.morsedecoder.domain.repository.ChatRepository
@@ -10,6 +11,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
@@ -28,11 +30,22 @@ class WifiChatRepositoryImpl(private val context: Context) : ChatRepository {
     /** 전체 메시지 목록을 스트림 형태로 제공하는 Flow */
     override fun getMessages(): Flow<List<MorseMessage>> = _messages.asStateFlow()
 
-    /** 탐색된 피어(상대방 기기)들의 IP 및 포트 정보 집합 */
-    private val _peers = MutableStateFlow<Set<Pair<String, Int>>>(emptySet())
+    /** 탐색된 피어(상대방 기기)들의 서비스명, IP 및 포트 정보 맵 */
+    private val _peers = MutableStateFlow<Map<String, Pair<String, Int>>>(emptyMap())
     
     /** 탐색된 피어 목록을 스트림 형태로 제공 (UI 등에서 활용 가능) */
-    val peers = _peers.asStateFlow()
+    override fun getPeers(): Flow<Set<Pair<String, Int>>> = _peers.map { it.values.toSet() }
+
+    override fun getWifiName(): String {
+        return try {
+            val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val wifiInfo = wifiManager.connectionInfo
+            val ssid = wifiInfo.ssid
+            if (ssid == "<unknown ssid>" || ssid == "0x") "Connected Network" else ssid.removeSurrounding("\"")
+        } catch (e: Exception) {
+            "Local Network"
+        }
+    }
 
     /** 메시지 수신을 위한 서버 소켓 */
     private var serverSocket: ServerSocket? = null
@@ -128,7 +141,7 @@ class WifiChatRepositoryImpl(private val context: Context) : ChatRepository {
         val messageToSend = "$serviceName|$text|$morse"
         
         // 탐색된 모든 피어에게 메시지 브로드캐스팅
-        _peers.value.forEach { (ip, port) ->
+        _peers.value.values.forEach { (ip, port) ->
             scope.launch {
                 try {
                     val socket = Socket(ip, port)
@@ -184,13 +197,14 @@ class WifiChatRepositoryImpl(private val context: Context) : ChatRepository {
                         override fun onResolveFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {}
                         override fun onServiceResolved(serviceInfo: NsdServiceInfo) {
                             // 피어 IP와 포트 정보를 목록에 추가
-                            _peers.value = _peers.value + (serviceInfo.host.hostAddress!! to serviceInfo.port)
+                            _peers.value = _peers.value + (serviceInfo.serviceName to (serviceInfo.host.hostAddress!! to serviceInfo.port))
                         }
                     })
                 }
             }
             override fun onServiceLost(service: NsdServiceInfo) {
-                // 서비스 손실 시 목록에서 제거하는 로직 추가 가능
+                // 서비스 손실 시 목록에서 제거
+                _peers.value = _peers.value - service.serviceName
             }
             override fun onDiscoveryStopped(serviceType: String) {}
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {}

@@ -33,6 +33,16 @@ interface ChatRepository {
     fun discoverPeers()
 
     /**
+     * 탐색된 피어 목록을 스트림 형태로 제공합니다.
+     */
+    fun getPeers(): Flow<Set<Pair<String, Int>>>
+
+    /**
+     * 현재 연결된 Wi-Fi의 이름을 반환합니다.
+     */
+    fun getWifiName(): String
+
+    /**
      * 특정 IP 주소의 피어와 연결을 시도합니다 (현재 구현에서는 자동 탐색 기반).
      */
     fun connectToPeer(ipAddress: String)

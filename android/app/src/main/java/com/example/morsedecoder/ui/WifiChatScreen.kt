@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +45,9 @@ import com.example.morsedecoder.domain.util.MorseDictionary
 @Composable
 fun WifiChatScreen(viewModel: ChatViewModel) {
     val messages by viewModel.messages.collectAsState()
+    val peerCount by viewModel.peerCount.collectAsState()
+    val wifiName = viewModel.wifiName
+    
     var inputText by remember { mutableStateOf("") }
     var currentMorseBuffer by remember { mutableStateOf("") }
     var lastTapTime by remember { mutableStateOf(0L) }
@@ -133,13 +137,43 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
             .background(Color(0xFF0A0A0B))
             .padding(16.dp)
     ) {
-        Text(
-            "WIFI_P2P_MESSSENGER_V1.1",
-            color = Color(0xFF2DD4BF),
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        // Networking Status Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Wifi,
+                    contentDescription = null,
+                    tint = Color(0xFF2DD4BF),
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = wifiName,
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Surface(
+                color = if (peerCount > 0) Color(0xFF2DD4BF).copy(alpha = 0.1f) else Color.DarkGray.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = if (peerCount > 0) "$peerCount PEER(S) CONNECTED" else "WAITING FOR PEERS...",
+                    color = if (peerCount > 0) Color(0xFF2DD4BF) else Color.Gray,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
 
         LazyColumn(
             modifier = Modifier.weight(1f),
