@@ -26,8 +26,8 @@ class MorseToneGenerator {
         
         val track = AudioTrack.Builder()
             .setAudioAttributes(AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build())
             .setAudioFormat(AudioFormat.Builder()
                 .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
@@ -45,45 +45,24 @@ class MorseToneGenerator {
                 track.play()
                 var angle = 0.0
                 val samples = ShortArray(1024)
-                var fadeCount = 0
-                val fadeSamples = 441 // 10ms fade
                 
-                // Play logic
-                while (isPlaying && activeTrack == track) {
+                while (isPlaying) {
                     for (i in samples.indices) {
-                        val base = sin(angle)
-                        // Smooth fade in
-                        val envelope = if (fadeCount < fadeSamples) {
-                            fadeCount.toDouble() / fadeSamples
-                        } else 1.0
-                        
-                        samples[i] = (base * Short.MAX_VALUE * 0.7 * envelope).toInt().toShort()
+                        samples[i] = (sin(angle) * Short.MAX_VALUE * 0.7).toInt().toShort()
                         angle += 2.0 * Math.PI * freq / sampleRate
                         if (angle > 2.0 * Math.PI) angle -= 2.0 * Math.PI
-                        if (fadeCount < fadeSamples) fadeCount++
                     }
-                    track.write(samples, 0, samples.size)
-                }
-
-                // Smooth fade out to prevent cracking
-                fadeCount = fadeSamples
-                while (fadeCount > 0) {
-                    for (i in samples.indices) {
-                        val base = sin(angle)
-                        val envelope = fadeCount.toDouble() / fadeSamples
-                        samples[i] = (base * Short.MAX_VALUE * 0.7 * envelope).toInt().toShort()
-                        angle += 2.0 * Math.PI * freq / sampleRate
-                        if (angle > 2.0 * Math.PI) angle -= 2.0 * Math.PI
-                        if (fadeCount > 0) fadeCount--
+                    if (track.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                        track.write(samples, 0, samples.size)
+                    } else {
+                        break
                     }
-                    track.write(samples, 0, samples.size)
                 }
-
-                track.stop()
             } catch (e: Exception) {
-                // Handle or log
+                e.printStackTrace()
             } finally {
                 try {
+                    track.stop()
                     track.release()
                 } catch (e: Exception) {}
                 synchronized(this) {
