@@ -299,7 +299,7 @@ fun WifiChatScreen(viewModel: ChatViewModel) {
                             },
                             colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                         )
-                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
+                        Divider(color = Color.Gray.copy(alpha = 0.2f))
                     }
                     item {
                         Spacer(modifier = Modifier.height(32.dp))
